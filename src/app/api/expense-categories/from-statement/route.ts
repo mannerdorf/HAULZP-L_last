@@ -6,7 +6,7 @@ import { SUBDIVISIONS } from '@/lib/constants';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { counterparty, name, subdivisionId, type, month, year } = body;
+    const { counterparty, name, subdivisionId, type, month, year, saveExpense, amount } = body;
 
     if (!counterparty || typeof counterparty !== 'string' || !counterparty.trim()) {
       return Response.json({ error: 'Укажите контрагента' }, { status: 400 });
@@ -50,6 +50,27 @@ export async function POST(req: NextRequest) {
         where: { period, counterparty: counterparty.trim() },
         data: { accounted: true, categoryId: category.id },
       });
+
+      const shouldSave = saveExpense !== false;
+      const amt = Number(amount) || 0;
+      if (shouldSave && amt !== 0) {
+        await prisma.manualExpense.upsert({
+          where: {
+            period_categoryId: {
+              period,
+              categoryId: category.id,
+            },
+          },
+          create: {
+            period,
+            categoryId: category.id,
+            amount: amt,
+          },
+          update: {
+            amount: amt,
+          },
+        });
+      }
     }
 
     return Response.json({ category, ok: true });

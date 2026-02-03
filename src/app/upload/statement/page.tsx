@@ -27,6 +27,7 @@ export default function UploadStatementPage() {
   const [modal, setModal] = useState<Row | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveExpense, setSaveExpense] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -78,6 +79,7 @@ export default function UploadStatementPage() {
       subdivisionId: 'pickup_msk',
       type: 'OPEX',
     });
+    setSaveExpense(true);
     setSaveError(null);
   };
 
@@ -130,6 +132,8 @@ export default function UploadStatementPage() {
           type: form.type,
           month,
           year,
+          saveExpense,
+          amount: modal.totalAmount,
         }),
       });
       const data = await res.json();
@@ -336,6 +340,17 @@ export default function UploadStatementPage() {
                   <option value="CAPEX">CAPEX</option>
                 </select>
               </div>
+              <label className="flex items-start gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={saveExpense}
+                  onChange={(e) => setSaveExpense(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>
+                  Записать сумму {formatRub(modal.totalAmount)} в расходы за выбранный период
+                </span>
+              </label>
               {saveError && (
                 <p className="text-sm text-red-600">{saveError}</p>
               )}
