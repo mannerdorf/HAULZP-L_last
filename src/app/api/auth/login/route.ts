@@ -6,7 +6,9 @@ export async function POST(req: NextRequest) {
   const password = process.env.AUTH_PASSWORD;
 
   if (!email || !password) {
-    return NextResponse.json({ error: 'Авторизация не настроена' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Задайте AUTH_EMAIL, AUTH_PASSWORD и AUTH_SECRET в настройках (Vercel → Environment Variables или локально в .env)',
+    }, { status: 500 });
   }
 
   let body: { email?: string; password?: string };

@@ -22,7 +22,8 @@ export default function LoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'Ошибка входа');
+        const msg = data.error || data.message || `Ошибка ${res.status}`;
+        setError(msg);
         return;
       }
       router.push('/');
