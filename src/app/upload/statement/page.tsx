@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, Plus, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, Plus, X, Trash2 } from 'lucide-react';
 import { SUBDIVISIONS } from '@/lib/constants';
 
 type Row = { counterparty: string; totalAmount: number; count: number };
@@ -70,6 +70,11 @@ export default function UploadStatementPage() {
   const closeModal = () => {
     setModal(null);
     setSaveError(null);
+  };
+
+  const removeRow = (row: Row) => {
+    setRows((prev) => prev.filter((r) => r.counterparty !== row.counterparty));
+    if (modal?.counterparty === row.counterparty) closeModal();
   };
 
   const handleCreateInReference = async (e: React.FormEvent) => {
@@ -166,14 +171,24 @@ export default function UploadStatementPage() {
                     <td className="px-4 py-3 text-right font-medium text-slate-800">{formatRub(row.totalAmount)}</td>
                     <td className="px-4 py-3 text-right text-slate-600">{row.count}</td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openModal(row)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Создать в справочнике и в подразделение
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openModal(row)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Создать в справочнике и в подразделение
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeRow(row)}
+                          title="Удалить строку"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
