@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite не поддерживает enum — используем String
+
+// Операция (транзакция)
+model Operation {
+  id              String    @id @default(cuid())
+  date            DateTime
+  counterparty    String
+  purpose         String
+  amount          Float     // Положительное = приход, отрицательное = расход
+  operationType   String    // REVENUE | COGS | OPEX | BELOW_EBITDA_DIVIDENDS | BELOW_EBITDA_TRANSIT
+  department      String    // LOGISTICS_MSK | LOGISTICS_KGD | ...
+  logisticsStage  String?   // PICKUP | DEPARTURE_WAREHOUSE | MAINLINE | ...
+  direction       String?   // MSK_TO_KGD | KGD_TO_MSK
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([date])
+  @@index([operationType])
+  @@index([department])
+  @@index([direction])
+}
+
+// Продажи (для расчёта веса и выручки по направлениям)
+model Sale {
+  id            String   @id @default(cuid())
+  date          DateTime
+  client        String
+  direction     String   // MSK_TO_KGD | KGD_TO_MSK
+  transportType String?  // AUTO | FERRY — для ручного ввода
+  weightKg      Float
+  volume        Float?   // объём (м³)
+  paidWeightKg  Float?   // платный вес (кг)
+  revenue       Float    // итого
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+  @@index([direction])
+}
+
+// Платежи по кредитам и лизингу (ниже EBITDA)
+model CreditPayment {
+  id           String   @id @default(cuid())
+  date         DateTime
+  counterparty String   // банк / лизинговая компания
+  purpose      String?  // назначение
+  amount       Float
+  type         String   // CREDIT | LEASING
+  createdAt    DateTime @default(now())
+
+  @@index([date])
+  @@index([type])
+}
+
+// Справочник доходов
+model IncomeCategory {
+  id         String   @id @default(cuid())
+  name       String
+  direction  String   // MSK_TO_KGD | KGD_TO_MSK
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  revenues   ManualRevenue[]
+}
+
+// Справочник расходов
+model ExpenseCategory {
+  id             String   @id @default(cuid())
+  name           String
+  department     String   // LOGISTICS_MSK | LOGISTICS_KGD | ...
+  type           String   // COGS | OPEX
+  logisticsStage String?  // для COGS: PICKUP | MAINLINE | ...
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  expenses       ManualExpense[]
+
+  @@index([department])
+}
+
+// Ручной ввод дохода за период
+model ManualRevenue {
+  id         String   @id @default(cuid())
+  period     DateTime // первый день месяца
+  categoryId String
+  amount     Float
+  createdAt  DateTime @default(now())
+  category   IncomeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([period, categoryId])
+  @@index([period])
+}
+
+// Ручной ввод расхода за период
+model ManualExpense {
+  id         String   @id @default(cuid())
+  period     DateTime
+  categoryId String
+  amount     Float
+  createdAt  DateTime @default(now())
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([period, categoryId])
+  @@index([period])
+}
+
+// Правила классификации по контрагенту
+model ClassificationRule {
+  id              String   @id @default(cuid())
+  counterparty    String
+  purposePattern  String?
+  operationType   String
+  department      String
+  logisticsStage  String?
+  direction       String?
+  createdAt       DateTime @default(now())
+
+  @@unique([counterparty])
+}
