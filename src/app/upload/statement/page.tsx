@@ -184,9 +184,10 @@ export default function UploadStatementPage() {
                           type="button"
                           onClick={() => removeRow(row)}
                           title="Удалить строку"
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-slate-200 hover:border-red-200"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 shrink-0" />
+                          Удалить
                         </button>
                       </div>
                     </td>
