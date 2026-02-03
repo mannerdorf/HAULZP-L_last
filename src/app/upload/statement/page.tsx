@@ -91,6 +91,29 @@ export default function UploadStatementPage() {
     if (modal?.counterparty === row.counterparty) closeModal();
   };
 
+  const toggleAccounted = async (row: Row) => {
+    const next = !row.accounted;
+    setRows((prev) =>
+      prev.map((r) => (r.counterparty === row.counterparty ? { ...r, accounted: next } : r))
+    );
+    try {
+      await fetch('/api/statement', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month,
+          year,
+          counterparty: row.counterparty,
+          accounted: next,
+        }),
+      });
+    } catch {
+      setRows((prev) =>
+        prev.map((r) => (r.counterparty === row.counterparty ? { ...r, accounted: row.accounted } : r))
+      );
+    }
+  };
+
   const handleCreateInReference = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modal) return;
@@ -217,15 +240,18 @@ export default function UploadStatementPage() {
                     <td className="px-4 py-3 text-right font-medium text-slate-800">{formatRub(row.totalAmount)}</td>
                     <td className="px-4 py-3 text-right text-slate-600">{row.count}</td>
                     <td className="px-4 py-3 text-center">
-                      <span
+                      <button
+                        type="button"
+                        onClick={() => toggleAccounted(row)}
                         className={
                           row.accounted
-                            ? 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700'
-                            : 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700'
+                            ? 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                            : 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100'
                         }
+                        title="Кликните, чтобы изменить статус"
                       >
                         {row.accounted ? 'Учтено' : 'Не учтено'}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

@@ -25,3 +25,20 @@ export async function GET(req: NextRequest) {
     })),
   });
 }
+
+export async function PATCH(req: NextRequest) {
+  const body = await req.json();
+  const { month, year, counterparty, accounted } = body ?? {};
+  const m = Number(month);
+  const y = Number(year);
+  if (!m || !y || !counterparty) {
+    return Response.json({ error: 'Нужен период и контрагент' }, { status: 400 });
+  }
+  const periodStr = `${y}-${String(m).padStart(2, '0')}-01`;
+  const period = new Date(periodStr);
+  await prisma.statementExpense.updateMany({
+    where: { period, counterparty: String(counterparty) },
+    data: { accounted: Boolean(accounted) },
+  });
+  return Response.json({ ok: true });
+}
