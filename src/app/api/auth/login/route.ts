@@ -4,10 +4,16 @@ import { signSession, getSessionCookieName, getSessionCookieOptions } from '@/li
 export async function POST(req: NextRequest) {
   const email = process.env.AUTH_EMAIL?.trim();
   const password = process.env.AUTH_PASSWORD;
+  const secret = process.env.AUTH_SECRET;
 
   if (!email || !password) {
     return NextResponse.json({
-      error: 'Задайте AUTH_EMAIL, AUTH_PASSWORD и AUTH_SECRET в настройках (Vercel → Environment Variables или локально в .env)',
+      error: 'Задайте AUTH_EMAIL и AUTH_PASSWORD в настройках (Vercel → Environment Variables или .env)',
+    }, { status: 500 });
+  }
+  if (!secret || secret.length < 16) {
+    return NextResponse.json({
+      error: 'Задайте AUTH_SECRET в настройках (минимум 16 символов, Vercel → Environment Variables или .env)',
     }, { status: 500 });
   }
 
@@ -25,8 +31,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 });
   }
 
-  const token = signSession(inputEmail);
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(getSessionCookieName(), token, getSessionCookieOptions());
-  return res;
+  try {
+    const token = signSession(inputEmail);
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(getSessionCookieName(), token, getSessionCookieOptions());
+    return res;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Ошибка при создании сессии';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
