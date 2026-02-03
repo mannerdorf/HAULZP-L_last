@@ -9,6 +9,10 @@ const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-geist-sa
 export const metadata: Metadata = {
   title: 'P&L + Unit Economics',
   description: 'Логистика Москва — Калининград',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
