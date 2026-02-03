@@ -7,6 +7,15 @@ const ROWS = [
   { direction: 'KGD_TO_MSK' as const, transportType: 'AUTO' as const },
 ];
 
+type ManualSaleRow = {
+  direction?: string;
+  transportType?: string;
+  weightKg?: number | string;
+  volume?: number | string;
+  paidWeightKg?: number | string;
+  revenue?: number | string;
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const month = searchParams.get('month');
@@ -47,7 +56,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { month?: number; year?: number; rows?: unknown[] };
+  let body: { month?: number; year?: number; rows?: ManualSaleRow[] };
   try {
     body = await req.json();
   } catch {
@@ -74,10 +83,10 @@ export async function POST(req: NextRequest) {
     for (const r of rows) {
       const direction = r.direction === 'KGD_TO_MSK' ? 'KGD_TO_MSK' : 'MSK_TO_KGD';
       const transportType = r.transportType === 'FERRY' ? 'FERRY' : 'AUTO';
-      const weightKg = parseFloat(r.weightKg) || 0;
-      const volume = parseFloat(r.volume) || 0;
-      const paidWeightKg = parseFloat(r.paidWeightKg) || 0;
-      const revenue = parseFloat(r.revenue) || 0;
+      const weightKg = parseFloat(String(r.weightKg ?? '')) || 0;
+      const volume = parseFloat(String(r.volume ?? '')) || 0;
+      const paidWeightKg = parseFloat(String(r.paidWeightKg ?? '')) || 0;
+      const revenue = parseFloat(String(r.revenue ?? '')) || 0;
 
       await tx.sale.create({
         data: {
