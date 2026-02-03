@@ -23,8 +23,15 @@ export default function ExpensesRefPage() {
     type: 'COGS' as string,
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => fetch('/api/expense-categories').then((r) => r.json()).then(setCats);
+  const load = () =>
+    fetch('/api/expense-categories')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCats(data);
+        else setCats([]);
+      });
 
   useEffect(() => {
     load().finally(() => setLoading(false));
@@ -34,11 +41,12 @@ export default function ExpensesRefPage() {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
+    setError(null);
     try {
       const sub = SUBDIVISIONS.find((s) => s.id === form.subdivision);
       if (!sub) return;
 
-      await fetch('/api/expense-categories', {
+      const res = await fetch('/api/expense-categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -48,6 +56,11 @@ export default function ExpensesRefPage() {
           logisticsStage: sub.logisticsStage,
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || `Ошибка ${res.status}`);
+        return;
+      }
       setForm({ name: '', subdivision: 'pickup_msk', type: 'COGS' });
       await load();
     } finally {
@@ -132,6 +145,9 @@ export default function ExpensesRefPage() {
             </select>
           </div>
         </div>
+        {error && (
+          <p className="text-red-600 text-sm">{error}</p>
+        )}
         <button
           type="submit"
           disabled={saving}
