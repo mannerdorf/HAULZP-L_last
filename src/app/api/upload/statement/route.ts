@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import * as XLSX from 'xlsx';
+import { prisma } from '@/lib/prisma';
 
 function parseAmount(v: unknown): number {
   if (typeof v === 'number') return isNaN(v) ? 0 : v;
@@ -45,13 +46,17 @@ export interface StatementCounterpartyRow {
   counterparty: string;
   totalAmount: number;
   count: number;
+  accounted: boolean;
 }
 
-/** POST: загрузка выписки, только расходные операции, агрегация по контрагенту. В БД ничего не пишем. */
+/** POST: загрузка выписки, только расходные операции, агрегация по контрагенту. */
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get('file') as File;
+  const month = Number(formData.get('month'));
+  const year = Number(formData.get('year'));
   if (!file) return Response.json({ error: 'Нужен файл' }, { status: 400 });
+  if (!month || !year) return Response.json({ error: 'Нужен период' }, { status: 400 });
 
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array' });
@@ -104,9 +109,34 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const byCounterpartyList: StatementCounterpartyRow[] = Array.from(byCounterparty.entries())
-    .map(([counterparty, v]) => ({ counterparty, totalAmount: v.totalAmount, count: v.count }))
-    .sort((a, b) => b.totalAmount - a.totalAmount);
+  const periodStr = `${year}-${String(month).padStart(2, '0')}-01`;
+  const period = new Date(periodStr);
+
+  await prisma.statementExpense.deleteMany({ where: { period } });
+
+  const createData = Array.from(byCounterparty.entries()).map(([counterparty, v]) => ({
+    period,
+    counterparty,
+    totalAmount: v.totalAmount,
+    operationsCount: v.count,
+    accounted: false,
+  }));
+  if (createData.length) {
+    await prisma.statementExpense.createMany({ data: createData });
+  }
+
+  const saved = await prisma.statementExpense.findMany({
+    where: { period },
+    orderBy: { totalAmount: 'desc' },
+    select: { counterparty: true, totalAmount: true, operationsCount: true, accounted: true },
+  });
+
+  const byCounterpartyList: StatementCounterpartyRow[] = saved.map((s) => ({
+    counterparty: s.counterparty,
+    totalAmount: s.totalAmount,
+    count: s.operationsCount,
+    accounted: s.accounted,
+  }));
 
   return Response.json({ byCounterparty: byCounterpartyList });
 }

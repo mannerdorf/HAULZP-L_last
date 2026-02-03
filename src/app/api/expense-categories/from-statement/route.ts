@@ -6,7 +6,7 @@ import { SUBDIVISIONS } from '@/lib/constants';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { counterparty, name, subdivisionId, type } = body;
+    const { counterparty, name, subdivisionId, type, month, year } = body;
 
     if (!counterparty || typeof counterparty !== 'string' || !counterparty.trim()) {
       return Response.json({ error: 'Укажите контрагента' }, { status: 400 });
@@ -42,6 +42,15 @@ export async function POST(req: NextRequest) {
         logisticsStage: sub.logisticsStage,
       },
     });
+
+    if (month && year) {
+      const periodStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const period = new Date(periodStr);
+      await prisma.statementExpense.updateMany({
+        where: { period, counterparty: counterparty.trim() },
+        data: { accounted: true, categoryId: category.id },
+      });
+    }
 
     return Response.json({ category, ok: true });
   } catch (e) {

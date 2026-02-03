@@ -94,6 +94,21 @@ CREATE TABLE "ManualExpense" (
 );
 
 -- CreateTable
+CREATE TABLE "StatementExpense" (
+    "id" TEXT NOT NULL,
+    "period" TIMESTAMP(3) NOT NULL,
+    "counterparty" TEXT NOT NULL,
+    "totalAmount" DOUBLE PRECISION NOT NULL,
+    "operationsCount" INTEGER NOT NULL,
+    "accounted" BOOLEAN NOT NULL DEFAULT false,
+    "categoryId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StatementExpense_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "ClassificationRule" (
     "id" TEXT NOT NULL,
     "counterparty" TEXT NOT NULL,
@@ -121,8 +136,12 @@ CREATE INDEX "ManualRevenue_period_idx" ON "ManualRevenue"("period");
 CREATE UNIQUE INDEX "ManualRevenue_period_categoryId_key" ON "ManualRevenue"("period", "categoryId");
 CREATE INDEX "ManualExpense_period_idx" ON "ManualExpense"("period");
 CREATE UNIQUE INDEX "ManualExpense_period_categoryId_key" ON "ManualExpense"("period", "categoryId");
+CREATE INDEX "StatementExpense_period_idx" ON "StatementExpense"("period");
+CREATE INDEX "StatementExpense_accounted_idx" ON "StatementExpense"("accounted");
+CREATE UNIQUE INDEX "StatementExpense_period_counterparty_key" ON "StatementExpense"("period", "counterparty");
 CREATE UNIQUE INDEX "ClassificationRule_counterparty_key" ON "ClassificationRule"("counterparty");
 
 -- AddForeignKey
 ALTER TABLE "ManualRevenue" ADD CONSTRAINT "ManualRevenue_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "IncomeCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "ManualExpense" ADD CONSTRAINT "ManualExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "StatementExpense" ADD CONSTRAINT "StatementExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;

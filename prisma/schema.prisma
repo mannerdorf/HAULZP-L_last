@@ -110,6 +110,24 @@ model ManualExpense {
   @@index([period])
 }
 
+// Свод расходов из выписки (по контрагентам за период)
+model StatementExpense {
+  id              String   @id @default(cuid())
+  period          DateTime // первый день месяца
+  counterparty    String
+  totalAmount     Float
+  operationsCount Int
+  accounted       Boolean  @default(false)
+  categoryId      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  category        ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([period, counterparty])
+  @@index([period])
+  @@index([accounted])
+}
+
 // Правила классификации по контрагенту
 model ClassificationRule {
   id              String   @id @default(cuid())

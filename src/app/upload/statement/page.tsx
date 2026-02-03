@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, FileSpreadsheet, Plus, X, Trash2 } from 'lucide-react';
 import { SUBDIVISIONS } from '@/lib/constants';
 
-type Row = { counterparty: string; totalAmount: number; count: number };
+type Row = { counterparty: string; totalAmount: number; count: number; accounted?: boolean };
+
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
 function formatRub(n: number) {
   return new Intl.NumberFormat('ru-RU', {
@@ -15,6 +17,9 @@ function formatRub(n: number) {
 }
 
 export default function UploadStatementPage() {
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
@@ -29,11 +34,18 @@ export default function UploadStatementPage() {
     subdivisionId: 'pickup_msk',
     type: 'OPEX' as string,
   });
+  const years = [year - 1, year, year + 1];
+
+  useEffect(() => {
+    fetch(`/api/statement?month=${month}&year=${year}`)
+      .then((r) => r.json())
+      .then((data) => setRows(Array.isArray(data.byCounterparty) ? data.byCounterparty : []))
+      .catch(() => setRows([]));
+  }, [month, year]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     setFile(f ?? null);
-    setRows([]);
     setError(null);
   };
 
@@ -44,6 +56,8 @@ export default function UploadStatementPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('month', String(month));
+      formData.append('year', String(year));
       const res = await fetch('/api/upload/statement', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Ошибка загрузки');
@@ -91,10 +105,15 @@ export default function UploadStatementPage() {
           name: form.name.trim() || modal.counterparty,
           subdivisionId: form.subdivisionId,
           type: form.type,
+          month,
+          year,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Ошибка сохранения');
+      setRows((prev) =>
+        prev.map((r) => (r.counterparty === modal.counterparty ? { ...r, accounted: true } : r))
+      );
       closeModal();
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Ошибка');
@@ -113,6 +132,32 @@ export default function UploadStatementPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600">Месяц</label>
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white"
+            >
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i + 1}>{m}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-600">Год</label>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white"
+            >
+              {years.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <div
           onClick={() => inputRef.current?.click()}
           className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/50 transition-colors"
@@ -161,7 +206,8 @@ export default function UploadStatementPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Контрагент</th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">Сумма</th>
                   <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">Операций</th>
-                  <th className="px-4 py-3 w-48 text-right text-sm font-medium text-slate-600">Действия</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-slate-600">Статус</th>
+                  <th className="px-4 py-3 w-56 text-right text-sm font-medium text-slate-600">Действия</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,6 +216,17 @@ export default function UploadStatementPage() {
                     <td className="px-4 py-3 text-slate-900">{row.counterparty}</td>
                     <td className="px-4 py-3 text-right font-medium text-slate-800">{formatRub(row.totalAmount)}</td>
                     <td className="px-4 py-3 text-right text-slate-600">{row.count}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={
+                          row.accounted
+                            ? 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700'
+                            : 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700'
+                        }
+                      >
+                        {row.accounted ? 'Учтено' : 'Не учтено'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button

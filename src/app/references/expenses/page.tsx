@@ -176,7 +176,17 @@ export default function ExpensesRefPage() {
                 {items.map((c) => (
                   <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50/50">
                     <td className="px-4 py-2 text-slate-900">{c.name}</td>
-                    <td className="px-4 py-2 text-slate-600">{c.type}</td>
+                    <td className="px-4 py-2">
+                      <select
+                        value={c.type}
+                        onChange={(e) => handleUpdate(c.id, { type: e.target.value })}
+                        className="border border-slate-300 rounded px-2 py-1 text-slate-900 bg-white"
+                      >
+                        <option value="COGS">COGS</option>
+                        <option value="OPEX">OPEX</option>
+                        <option value="CAPEX">CAPEX</option>
+                      </select>
+                    </td>
                     <td className="px-4 py-2">
                       <button onClick={() => handleDelete(c.id)} className="p-1 text-slate-500 hover:text-red-600">
                         <Trash2 className="w-4 h-4" />
