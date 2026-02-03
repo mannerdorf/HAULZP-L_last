@@ -59,6 +59,22 @@ CREATE TABLE "IncomeCategory" (
 );
 
 -- CreateTable
+CREATE TABLE IF NOT EXISTS "Subdivision" (
+    "id" TEXT NOT NULL,
+    "code" TEXT,
+    "name" TEXT NOT NULL,
+    "department" TEXT NOT NULL,
+    "logisticsStage" TEXT,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Subdivision_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Subdivision_code_key" ON "Subdivision"("code");
+CREATE INDEX IF NOT EXISTS "Subdivision_department_idx" ON "Subdivision"("department");
+
+-- CreateTable
 CREATE TABLE "ExpenseCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,

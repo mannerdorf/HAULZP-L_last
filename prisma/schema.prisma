@@ -70,6 +70,19 @@ model IncomeCategory {
   revenues   ManualRevenue[]
 }
 
+// Справочник подразделений (для выбора на странице расходов)
+model Subdivision {
+  id             String   @id @default(cuid())
+  code           String?  @unique // pickup_msk, warehouse_msk — для URL ?sub=
+  name           String   // Заборная логистика Москва
+  department     String   // LOGISTICS_MSK | LOGISTICS_KGD | ...
+  logisticsStage String?  // PICKUP | MAINLINE | ... или null
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([department])
+}
+
 // Справочник расходов
 model ExpenseCategory {
   id             String   @id @default(cuid())

@@ -34,6 +34,7 @@ const navIncome = [{ href: '/upload/sales', label: 'Доходы', icon: DollarS
 
 const navExpensesRef = [
   { href: '/references/expenses', label: 'Справочник расходов', icon: BookOpen },
+  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2 },
   { href: '/upload/statement', label: 'Загрузка выписки', icon: FileUp },
   { href: '/upload/expenses', label: 'Расходы', icon: Truck },
 ];

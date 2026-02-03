@@ -3,32 +3,65 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { UploadExpenseForm } from '@/components/UploadExpenseForm';
-import { SUBDIVISIONS } from '@/lib/constants';
+
+interface Subdivision {
+  id: string;
+  code?: string | null;
+  name: string;
+  department: string;
+  logisticsStage: string | null;
+  sortOrder: number;
+}
 
 const ICON_MAP: Record<string, 'truck' | 'warehouse' | 'route' | 'package' | 'building'> = {
-  pickup_msk: 'truck',
-  warehouse_msk: 'warehouse',
-  mainline: 'route',
-  warehouse_kgd: 'warehouse',
-  lastmile_kgd: 'package',
-  administration: 'building',
-  direction: 'building',
+  truck: 'truck',
+  warehouse: 'warehouse',
+  route: 'route',
+  package: 'package',
+  building: 'building',
 };
 
-const VALID_IDS = new Set(SUBDIVISIONS.map((s) => s.id));
+function guessIcon(name: string): 'truck' | 'warehouse' | 'route' | 'package' | 'building' {
+  const n = name.toLowerCase();
+  if (n.includes('забор') || n.includes('pickup')) return 'truck';
+  if (n.includes('магистраль') || n.includes('mainline')) return 'route';
+  if (n.includes('миля') || n.includes('last mile')) return 'package';
+  return 'building';
+}
 
 export default function UploadExpensesPage() {
   const searchParams = useSearchParams();
   const subParam = searchParams.get('sub');
-  const initial = subParam && VALID_IDS.has(subParam) ? subParam : 'pickup_msk';
-  const [subdivisionId, setSubdivisionId] = useState<string>(initial);
+  const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subdivisionId, setSubdivisionId] = useState<string>('');
 
   useEffect(() => {
-    if (subParam && VALID_IDS.has(subParam)) setSubdivisionId(subParam);
-  }, [subParam]);
+    fetch('/api/subdivisions')
+      .then((r) => r.json())
+      .then((data: Subdivision[] | { error?: string }) => {
+        const list = Array.isArray(data) ? data : [];
+        setSubdivisions(list);
+        if (list.length && !subdivisionId) {
+          const byCode = subParam ? list.find((s) => s.code === subParam) : null;
+          const byId = subParam ? list.find((s) => s.id === subParam) : null;
+          const initial = byCode?.id ?? byId?.id ?? list[0].id;
+          setSubdivisionId(initial);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  const sub = SUBDIVISIONS.find((s) => s.id === subdivisionId);
-  if (!sub) return null;
+  useEffect(() => {
+    if (subParam && subdivisions.length) {
+      const byCode = subdivisions.find((s) => s.code === subParam);
+      const byId = subdivisions.find((s) => s.id === subParam);
+      const target = byCode ?? byId;
+      if (target) setSubdivisionId(target.id);
+    }
+  }, [subParam, subdivisions]);
+
+  const sub = subdivisions.find((s) => s.id === subdivisionId);
 
   const subdivisionSelect = (
     <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
@@ -38,14 +71,27 @@ export default function UploadExpensesPage() {
         onChange={(e) => setSubdivisionId(e.target.value)}
         className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white min-w-[220px]"
       >
-        {SUBDIVISIONS.map((s) => (
+        {subdivisions.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.label}
+            {s.name}
           </option>
         ))}
       </select>
     </label>
   );
+
+  if (loading) return <div className="animate-pulse text-slate-500 p-6">Загрузка...</div>;
+  if (!sub && subdivisions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Расходы</h1>
+          <p className="text-slate-500">Нет подразделений. Добавьте их в <a href="/references/subdivisions" className="text-primary-600 underline">справочник подразделений</a>.</p>
+        </div>
+      </div>
+    );
+  }
+  if (!sub) return null;
 
   return (
     <div className="space-y-6">
@@ -56,9 +102,9 @@ export default function UploadExpensesPage() {
       <UploadExpenseForm
         department={sub.department}
         logisticsStage={sub.logisticsStage}
-        label={sub.label}
-        description={`Расходы по подразделению «${sub.label}»`}
-        icon={ICON_MAP[sub.id] ?? 'building'}
+        label={sub.name}
+        description={`Расходы по подразделению «${sub.name}»`}
+        icon={guessIcon(sub.name)}
         subdivisionSelect={subdivisionSelect}
       />
     </div>
