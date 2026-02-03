@@ -80,6 +80,7 @@ model ExpenseCategory {
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())
   expenses       ManualExpense[]
+  statementExpenses StatementExpense[]
 
   @@index([department])
 }
