@@ -11,6 +11,7 @@ import {
   BarChart3,
   Bell,
   CreditCard,
+  Wallet,
   BookOpen,
   FileUp,
   Truck,
@@ -41,6 +42,7 @@ const navExpensesRef = [
 
 const navOther = [
   { href: '/credits', label: 'Кредиты', icon: CreditCard },
+  { href: '/opening-balance', label: 'Начальное сальдо', icon: Wallet },
   { href: '/settings', label: 'Настройки', icon: SlidersHorizontal },
 ];
 

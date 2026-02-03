@@ -142,6 +142,17 @@ model StatementExpense {
   @@index([accounted])
 }
 
+// Начальное (входящее) сальдо на дату
+model OpeningBalance {
+  id        String   @id @default(cuid())
+  period    DateTime // первый день месяца (на какую дату)
+  amount    Float    // положительное = остаток, отрицательное = долг/овердрафт
+  createdAt DateTime @default(now())
+
+  @@unique([period])
+  @@index([period])
+}
+
 // Правила классификации по контрагенту
 model ClassificationRule {
   id              String   @id @default(cuid())

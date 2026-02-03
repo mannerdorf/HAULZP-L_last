@@ -8,6 +8,7 @@ export interface DateRange {
 }
 
 export interface PnLData {
+  openingBalance: number;
   revenue: number;
   cogs: number;
   grossProfit: number;
@@ -66,6 +67,11 @@ async function getOperationsSum(
 
 export async function getPnL(params: FilterParams): Promise<PnLData> {
   const f = parseFilter(params);
+
+  const periodForOpening = f.dateFrom ? startOfMonth(f.dateFrom) : undefined;
+  const openingRec = periodForOpening
+    ? await prisma.openingBalance.findUnique({ where: { period: periodForOpening } }).then((r) => r?.amount ?? 0)
+    : 0;
 
   const [revenueOps, cogsOps, opexOps, capexOps, belowEbitdaOps, creditPayments, manualRevenue, manualCogs, manualOpex, manualCapex] = await Promise.all([
     getOperationsSum('REVENUE', f),
@@ -128,6 +134,7 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
   const netAfterCapex = ebitda - capex;
 
   return {
+    openingBalance: openingRec,
     revenue,
     cogs,
     grossProfit,

@@ -75,6 +75,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Subdivision_code_key" ON "Subdivision"("code"
 CREATE INDEX IF NOT EXISTS "Subdivision_department_idx" ON "Subdivision"("department");
 
 -- CreateTable
+CREATE TABLE IF NOT EXISTS "OpeningBalance" (
+    "id" TEXT NOT NULL,
+    "period" TIMESTAMP(3) NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OpeningBalance_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "OpeningBalance_period_key" ON "OpeningBalance"("period");
+CREATE INDEX IF NOT EXISTS "OpeningBalance_period_idx" ON "OpeningBalance"("period");
+
+-- CreateTable
 CREATE TABLE "ExpenseCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
