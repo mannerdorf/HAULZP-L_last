@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { UploadExpenseForm } from '@/components/UploadExpenseForm';
 
@@ -35,6 +35,7 @@ export default function UploadExpensesPage() {
   const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
   const [loading, setLoading] = useState(true);
   const [subdivisionId, setSubdivisionId] = useState<string>('');
+  const scrollYRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetch('/api/subdivisions')
@@ -63,12 +64,25 @@ export default function UploadExpensesPage() {
 
   const sub = subdivisions.find((s) => s.id === subdivisionId);
 
+  const handleSubdivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    scrollYRef.current = window.scrollY;
+    setSubdivisionId(e.target.value);
+  };
+
+  useEffect(() => {
+    if (scrollYRef.current != null) {
+      const y = scrollYRef.current;
+      scrollYRef.current = null;
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+  }, [subdivisionId]);
+
   const subdivisionSelect = (
     <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
       Подразделение
       <select
         value={subdivisionId}
-        onChange={(e) => setSubdivisionId(e.target.value)}
+        onChange={handleSubdivisionChange}
         className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900 bg-white min-w-[220px]"
       >
         {subdivisions.map((s) => (
