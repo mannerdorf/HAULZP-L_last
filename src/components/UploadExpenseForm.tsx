@@ -41,6 +41,8 @@ type Props = {
   label: string;
   description: string;
   icon: IconName;
+  /** Выпадающий список подразделений (рендерится рядом с периодом) */
+  subdivisionSelect?: React.ReactNode;
 };
 
 function formatRub(n: number) {
@@ -51,7 +53,7 @@ function generateId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-export function UploadExpenseForm({ department, logisticsStage, label, description, icon }: Props) {
+export function UploadExpenseForm({ department, logisticsStage, label, description, icon, subdivisionSelect }: Props) {
   const Icon = ICONS[icon];
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -194,7 +196,8 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
           </p>
         ) : (
           <>
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {subdivisionSelect}
               <div className="flex gap-2">
                 <select
                   value={month}
