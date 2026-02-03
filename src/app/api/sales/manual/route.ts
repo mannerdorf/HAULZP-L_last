@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'month, year, rows required' }, { status: 400 });
   }
 
-  const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+  const date = new Date(Number(year), Number(month) - 1, 1);
 
   try {
   await prisma.$transaction(async (tx) => {
