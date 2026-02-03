@@ -18,6 +18,7 @@ import {
   Route,
   DollarSign,
   Building2,
+  SlidersHorizontal,
   LogOut,
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ const navExpenses = [
 
 const navOther = [
   { href: '/credits', label: 'Кредиты', icon: CreditCard },
+  { href: '/settings', label: 'Настройки', icon: SlidersHorizontal },
 ];
 
 export function Sidebar() {

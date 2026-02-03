@@ -27,6 +27,7 @@ export default function PLPage() {
       opex: number;
       ebitda: number;
       capex: number;
+      netAfterCapex: number;
       belowEbitda: number;
       creditPayments?: number;
     };
@@ -132,7 +133,14 @@ export default function PLPage() {
           </section>
 
           <section className="p-6">
-            <h2 className="font-semibold text-slate-800 mb-4">7. Ниже EBITDA</h2>
+            <h2 className="font-semibold text-slate-800 mb-4">7. Валовая прибыль – OPEX – CAPEX</h2>
+            <div className="pl-4">
+              <span className="font-semibold">{formatRub(pnl.netAfterCapex ?? 0)}</span>
+            </div>
+          </section>
+
+          <section className="p-6">
+            <h2 className="font-semibold text-slate-800 mb-4">8. Ниже EBITDA</h2>
             <div className="space-y-2 pl-4">
               <div className="flex justify-between">
                 <span>Дивиденды</span>

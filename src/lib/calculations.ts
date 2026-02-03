@@ -15,6 +15,7 @@ export interface PnLData {
   ebitda: number;
   ebitdaPercent: number;
   capex: number;
+  netAfterCapex: number;
   belowEbitda: number;
   creditPayments: number;
 }
@@ -124,6 +125,7 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
   const grossProfit = revenue - cogs;
   const ebitda = grossProfit - opex;
   const ebitdaPercent = revenue > 0 ? (ebitda / revenue) * 100 : 0;
+  const netAfterCapex = ebitda - capex;
 
   return {
     revenue,
@@ -133,6 +135,7 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
     ebitda,
     ebitdaPercent,
     capex,
+    netAfterCapex,
     belowEbitda,
     creditPayments,
   };
@@ -305,7 +308,7 @@ export async function getUnitEconomics(params: FilterParams): Promise<UnitEconom
 
 export async function getMonthlySeries(
   params: FilterParams,
-  metric: 'revenue' | 'cogs' | 'ebitda'
+  metric: 'revenue' | 'cogs' | 'ebitda' | 'netAfterCapex'
 ): Promise<{ month: string; value: number }[]> {
   const to = params.to ? new Date(params.to) : new Date();
   const from = params.from ? new Date(params.from) : subMonths(to, 11);
@@ -322,7 +325,11 @@ export async function getMonthlySeries(
       ...(direction && { direction }),
     };
     const pnl = await getPnL(f);
-    const val = metric === 'revenue' ? pnl.revenue : metric === 'cogs' ? pnl.cogs : pnl.ebitda;
+    let val = 0;
+    if (metric === 'revenue') val = pnl.revenue;
+    else if (metric === 'cogs') val = pnl.cogs;
+    else if (metric === 'ebitda') val = pnl.ebitda;
+    else if (metric === 'netAfterCapex') val = pnl.netAfterCapex;
     months.push({ month: cur.toISOString().slice(0, 7), value: val });
     cur = startOfMonth(subMonths(next, -1));
   }

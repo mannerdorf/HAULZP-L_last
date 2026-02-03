@@ -14,19 +14,22 @@ export async function GET(req: NextRequest) {
     direction: (searchParams.get('direction') || undefined) as any,
   };
 
-  const [revenueLine, cogsLine, ebitdaLine, cogsByStage, opexByDept, ebitdaByDir] = await Promise.all([
-    getMonthlySeries(params, 'revenue'),
-    getMonthlySeries(params, 'cogs'),
-    getMonthlySeries(params, 'ebitda'),
-    getCogsByStage(params),
-    getOpexByDepartment(params),
-    getEbitdaByDirection(params),
-  ]);
+  const [revenueLine, cogsLine, ebitdaLine, netAfterCapexLine, cogsByStage, opexByDept, ebitdaByDir] =
+    await Promise.all([
+      getMonthlySeries(params, 'revenue'),
+      getMonthlySeries(params, 'cogs'),
+      getMonthlySeries(params, 'ebitda'),
+      getMonthlySeries(params, 'netAfterCapex'),
+      getCogsByStage(params),
+      getOpexByDepartment(params),
+      getEbitdaByDirection(params),
+    ]);
 
   return Response.json({
     revenueLine,
     cogsLine,
     ebitdaLine,
+    netAfterCapexLine,
     cogsByStage,
     opexByDept,
     revenueByDir: ebitdaByDir,

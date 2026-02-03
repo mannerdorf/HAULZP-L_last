@@ -39,6 +39,8 @@ export default function DashboardPage() {
     opex: number;
     ebitda: number;
     ebitdaPercent: number;
+    capex: number;
+    netAfterCapex: number;
     belowEbitda: number;
   } | null>(null);
   const [unitEcon, setUnitEcon] = useState<{ cogsPerKg: number } | null>(null);
@@ -46,6 +48,7 @@ export default function DashboardPage() {
     revenueLine: { month: string; value: number }[];
     cogsLine: { month: string; value: number }[];
     ebitdaLine: { month: string; value: number }[];
+    netAfterCapexLine: { month: string; value: number }[];
     cogsByStage: { stage: string; amount: number }[];
     opexByDept: { dept: string; amount: number }[];
     revenueByDir: { direction: string; amount: number }[];
@@ -79,6 +82,7 @@ export default function DashboardPage() {
       Выручка: charts.revenueLine[i]?.value ?? 0,
       COGS: charts.cogsLine[i]?.value ?? 0,
       EBITDA: charts.ebitdaLine[i]?.value ?? 0,
+      'Валовая прибыль – OPEX – CAPEX': charts.netAfterCapexLine?.[i]?.value ?? 0,
     })) ?? [];
 
   const stageLabels: Record<string, string> = {
@@ -105,6 +109,8 @@ export default function DashboardPage() {
           <KpiCard title="Валовая прибыль" value={formatRub(pnl.grossProfit)} />
           <KpiCard title="EBITDA" value={formatRub(pnl.ebitda)} />
           <KpiCard title="EBITDA %" value={`${pnl.ebitdaPercent.toFixed(1)}%`} />
+          <KpiCard title="CAPEX" value={formatRub(pnl.capex)} />
+          <KpiCard title="EBITDA – CAPEX" value={formatRub(pnl.netAfterCapex)} />
           <KpiCard
             title="Себестоимость 1 кг"
             value={unitEcon ? formatRub(unitEcon.cogsPerKg) : '—'}
@@ -127,6 +133,7 @@ export default function DashboardPage() {
                   <Line type="monotone" dataKey="Выручка" stroke="#3b82f6" strokeWidth={2} />
                   <Line type="monotone" dataKey="COGS" stroke="#ef4444" strokeWidth={2} />
                   <Line type="monotone" dataKey="EBITDA" stroke="#10b981" strokeWidth={2} />
+                  <Line type="monotone" dataKey="Валовая прибыль – OPEX – CAPEX" stroke="#f97316" strokeWidth={2} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
