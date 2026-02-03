@@ -27,6 +27,7 @@ export default function PLPage() {
       opex: number;
       ebitda: number;
       belowEbitda: number;
+      creditPayments?: number;
     };
     cogsByStage: { stage: string; amount: number }[];
     opexByDept: { dept: string; amount: number }[];
