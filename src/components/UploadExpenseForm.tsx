@@ -64,7 +64,8 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${logisticsStage === null ? '' : encodeURIComponent(logisticsStage)}`;
+    const stage = logisticsStage == null ? '' : logisticsStage;
+    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${stage ? encodeURIComponent(stage) : ''}`;
     fetch(`/api/manual-entry?${params}`)
       .then((r) => r.json())
       .then((data: { expenses?: SavedExpense[] }) => {
@@ -74,7 +75,8 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   }, [month, year, department, logisticsStage]);
 
   const loadSavedExpenses = () => {
-    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${logisticsStage === null ? '' : encodeURIComponent(logisticsStage)}`;
+    const stage = logisticsStage == null ? '' : logisticsStage;
+    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${stage ? encodeURIComponent(stage) : ''}`;
     fetch(`/api/manual-entry?${params}`)
       .then((r) => r.json())
       .then((data: { expenses?: SavedExpense[] }) => {
