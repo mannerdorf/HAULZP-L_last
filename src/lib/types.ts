@@ -2,6 +2,7 @@ export type OperationType =
   | 'REVENUE'
   | 'COGS'
   | 'OPEX'
+  | 'CAPEX'
   | 'BELOW_EBITDA_DIVIDENDS'
   | 'BELOW_EBITDA_TRANSIT';
 
@@ -9,6 +10,7 @@ export type Department =
   | 'LOGISTICS_MSK'
   | 'LOGISTICS_KGD'
   | 'ADMINISTRATION'
+  | 'DIRECTION'
   | 'IT'
   | 'SALES'
   | 'SERVICE'

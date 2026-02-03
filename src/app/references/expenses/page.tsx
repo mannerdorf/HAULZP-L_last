@@ -142,6 +142,7 @@ export default function ExpensesRefPage() {
             >
               <option value="COGS">COGS</option>
               <option value="OPEX">OPEX</option>
+              <option value="CAPEX">CAPEX</option>
             </select>
           </div>
         </div>

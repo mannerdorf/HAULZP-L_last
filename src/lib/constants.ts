@@ -4,6 +4,7 @@ export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
   REVENUE: 'Выручка',
   COGS: 'COGS',
   OPEX: 'OPEX',
+  CAPEX: 'CAPEX',
   BELOW_EBITDA_DIVIDENDS: 'Ниже EBITDA (дивиденды)',
   BELOW_EBITDA_TRANSIT: 'Транзит (кредиты/нал)',
 };
@@ -12,6 +13,7 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
   LOGISTICS_MSK: 'Логистика Москва',
   LOGISTICS_KGD: 'Логистика КГД',
   ADMINISTRATION: 'Администрация',
+  DIRECTION: 'Дирекция',
   IT: 'IT',
   SALES: 'Продажи',
   SERVICE: 'Сервис',
@@ -43,6 +45,7 @@ export const DEPARTMENTS: Department[] = [
   'LOGISTICS_MSK',
   'LOGISTICS_KGD',
   'ADMINISTRATION',
+  'DIRECTION',
   'IT',
   'SALES',
   'SERVICE',
@@ -53,6 +56,7 @@ export const OPERATION_TYPES: OperationType[] = [
   'REVENUE',
   'COGS',
   'OPEX',
+  'CAPEX',
   'BELOW_EBITDA_DIVIDENDS',
   'BELOW_EBITDA_TRANSIT',
 ];
@@ -67,4 +71,5 @@ export const SUBDIVISIONS = [
   { id: 'warehouse_kgd', label: 'Склад Калининград', department: 'LOGISTICS_KGD' as Department, logisticsStage: 'ARRIVAL_WAREHOUSE' as LogisticsStage },
   { id: 'lastmile_kgd', label: 'Последняя миля Калининград', department: 'LOGISTICS_KGD' as Department, logisticsStage: 'LAST_MILE' as LogisticsStage },
   { id: 'administration', label: 'Администрация', department: 'ADMINISTRATION' as Department, logisticsStage: null },
+  { id: 'direction', label: 'Дирекция', department: 'DIRECTION' as Department, logisticsStage: null },
 ] as const;

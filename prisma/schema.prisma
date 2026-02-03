@@ -75,7 +75,7 @@ model ExpenseCategory {
   id             String   @id @default(cuid())
   name           String
   department     String   // LOGISTICS_MSK | LOGISTICS_KGD | ...
-  type           String   // COGS | OPEX
+  type           String   // COGS | OPEX | CAPEX
   logisticsStage String?  // для COGS: PICKUP | MAINLINE | ...
   sortOrder      Int      @default(0)
   createdAt      DateTime @default(now())

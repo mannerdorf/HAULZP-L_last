@@ -14,6 +14,7 @@ export interface PnLData {
   opex: number;
   ebitda: number;
   ebitdaPercent: number;
+  capex: number;
   belowEbitda: number;
   creditPayments: number;
 }
@@ -65,10 +66,11 @@ async function getOperationsSum(
 export async function getPnL(params: FilterParams): Promise<PnLData> {
   const f = parseFilter(params);
 
-  const [revenueOps, cogsOps, opexOps, belowEbitdaOps, creditPayments, manualRevenue, manualCogs, manualOpex] = await Promise.all([
+  const [revenueOps, cogsOps, opexOps, capexOps, belowEbitdaOps, creditPayments, manualRevenue, manualCogs, manualOpex, manualCapex] = await Promise.all([
     getOperationsSum('REVENUE', f),
     getOperationsSum('COGS', f),
     getOperationsSum('OPEX', f),
+    getOperationsSum('CAPEX', f),
     prisma.operation.findMany({
       where: {
         operationType: { in: ['BELOW_EBITDA_DIVIDENDS', 'BELOW_EBITDA_TRANSIT'] },
@@ -104,11 +106,19 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
         category: { type: 'OPEX' },
       },
     }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
+    prisma.manualExpense.findMany({
+      where: {
+        ...(f.dateFrom && { period: { gte: f.dateFrom } }),
+        ...(f.dateTo && { period: { lte: f.dateTo } }),
+        category: { type: 'CAPEX' },
+      },
+    }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
   ]);
 
   const revenue = revenueOps + manualRevenue;
   const cogs = cogsOps + manualCogs;
   const opex = opexOps + manualOpex;
+  const capex = capexOps + manualCapex;
   const belowEbitda = belowEbitdaOps + creditPayments;
 
   const grossProfit = revenue - cogs;
@@ -122,6 +132,7 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
     opex,
     ebitda,
     ebitdaPercent,
+    capex,
     belowEbitda,
     creditPayments,
   };

@@ -12,6 +12,7 @@ import {
   Bell,
   CreditCard,
   BookOpen,
+  FileUp,
   Truck,
   Warehouse,
   Route,
@@ -30,7 +31,10 @@ const navMain = [
 
 const navIncome = [{ href: '/upload/sales', label: 'Доходы', icon: DollarSign }];
 
-const navExpensesRef = [{ href: '/references/expenses', label: 'Справочник расходов', icon: BookOpen }];
+const navExpensesRef = [
+  { href: '/references/expenses', label: 'Справочник расходов', icon: BookOpen },
+  { href: '/upload/statement', label: 'Загрузка выписки', icon: FileUp },
+];
 
 const navExpenses = [
   { href: '/upload/expenses/pickup-msk', label: 'Заборная логистика Москва', icon: Truck },
@@ -39,6 +43,7 @@ const navExpenses = [
   { href: '/upload/expenses/warehouse-kgd', label: 'Склад Калининград', icon: Warehouse },
   { href: '/upload/expenses/lastmile-kgd', label: 'Последняя миля Калининград', icon: Package },
   { href: '/upload/expenses/administration', label: 'Администрация', icon: Building2 },
+  { href: '/upload/expenses/direction', label: 'Дирекция', icon: Building2 },
 ];
 
 const navOther = [
