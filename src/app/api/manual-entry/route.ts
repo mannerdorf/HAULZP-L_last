@@ -5,11 +5,14 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const month = searchParams.get('month');
   const year = searchParams.get('year');
+  const department = searchParams.get('department');
+  const logisticsStage = searchParams.get('logisticsStage');
+
   if (!month || !year) return Response.json({ error: 'month, year required' }, { status: 400 });
 
   const period = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
 
-  const [revenues, expenses] = await Promise.all([
+  const [revenues, allExpenses] = await Promise.all([
     prisma.manualRevenue.findMany({
       where: { period },
       include: { category: true },
@@ -20,9 +23,22 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
+  let expenses = allExpenses;
+  if (department != null) {
+    expenses = allExpenses.filter((e) => {
+      if (e.category.department !== department) return false;
+      if (logisticsStage === '' || logisticsStage === 'null') return e.category.logisticsStage === null;
+      return e.category.logisticsStage === logisticsStage;
+    });
+  }
+
   return Response.json({
     revenues: revenues.map((r) => ({ categoryId: r.categoryId, amount: r.amount })),
-    expenses: expenses.map((e) => ({ categoryId: e.categoryId, amount: e.amount })),
+    expenses: expenses.map((e) => ({
+      categoryId: e.categoryId,
+      categoryName: e.category.name,
+      amount: e.amount,
+    })),
   });
 }
 

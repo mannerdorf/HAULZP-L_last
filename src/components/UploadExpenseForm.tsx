@@ -29,6 +29,12 @@ interface ExpenseRow {
   amount: string;
 }
 
+interface SavedExpense {
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+}
+
 type Props = {
   department: string;
   logisticsStage?: string | null;
@@ -52,9 +58,30 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   const [year, setYear] = useState(now.getFullYear());
   const [filteredCats, setFilteredCats] = useState<ExpenseCat[]>([]);
   const [rows, setRows] = useState<ExpenseRow[]>([{ id: generateId(), categoryId: '', amount: '' }]);
+  const [savedExpenses, setSavedExpenses] = useState<SavedExpense[]>([]);
   const [catsLoading, setCatsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${logisticsStage === null ? '' : encodeURIComponent(logisticsStage)}`;
+    fetch(`/api/manual-entry?${params}`)
+      .then((r) => r.json())
+      .then((data: { expenses?: SavedExpense[] }) => {
+        setSavedExpenses(Array.isArray(data.expenses) ? data.expenses : []);
+      })
+      .catch(() => setSavedExpenses([]));
+  }, [month, year, department, logisticsStage]);
+
+  const loadSavedExpenses = () => {
+    const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${logisticsStage === null ? '' : encodeURIComponent(logisticsStage)}`;
+    fetch(`/api/manual-entry?${params}`)
+      .then((r) => r.json())
+      .then((data: { expenses?: SavedExpense[] }) => {
+        setSavedExpenses(Array.isArray(data.expenses) ? data.expenses : []);
+      })
+      .catch(() => setSavedExpenses([]));
+  };
 
   useEffect(() => {
     fetch('/api/expense-categories')
@@ -107,6 +134,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
       });
       if (!res.ok) throw new Error('Ошибка сохранения');
       setSaveSuccess(true);
+      loadSavedExpenses();
     } finally {
       setSaving(false);
     }
@@ -220,6 +248,35 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
           </>
         )}
       </div>
+
+      {savedExpenses.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden max-w-2xl">
+          <h2 className="text-lg font-semibold text-slate-900 px-6 py-4 border-b border-slate-100">
+            Сохранённые затраты ({MONTHS[month - 1]} {year})
+          </h2>
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Статья</th>
+                <th className="px-6 py-2 text-right text-sm font-medium text-slate-600">Сумма</th>
+              </tr>
+            </thead>
+            <tbody>
+              {savedExpenses.map((e) => (
+                <tr key={e.categoryId} className="border-b border-slate-50">
+                  <td className="px-6 py-2 text-slate-900">{e.categoryName}</td>
+                  <td className="px-6 py-2 text-right text-slate-900 font-medium">{formatRub(e.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <span className="font-semibold text-slate-900">
+              Итого: {formatRub(savedExpenses.reduce((s, e) => s + e.amount, 0))}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

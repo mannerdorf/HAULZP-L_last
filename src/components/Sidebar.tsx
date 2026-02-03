@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import {
   LayoutDashboard,
@@ -17,6 +17,7 @@ import {
   Route,
   DollarSign,
   Building2,
+  LogOut,
 } from 'lucide-react';
 
 const navMain = [
@@ -46,6 +47,13 @@ const navOther = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col">
@@ -157,6 +165,16 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="p-3 border-t border-slate-700">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white w-full"
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          Выйти
+        </button>
+      </div>
     </aside>
   );
 }
