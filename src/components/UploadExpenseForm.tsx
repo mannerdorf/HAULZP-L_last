@@ -59,11 +59,14 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   const [filteredCats, setFilteredCats] = useState<ExpenseCat[]>([]);
   const [rows, setRows] = useState<ExpenseRow[]>([{ id: generateId(), categoryId: '', amount: '' }]);
   const [savedExpenses, setSavedExpenses] = useState<SavedExpense[]>([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [catsLoading, setCatsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    setSavedLoading(true);
     const stage = logisticsStage == null ? '' : logisticsStage;
     const params = `month=${month}&year=${year}&department=${encodeURIComponent(department)}&logisticsStage=${stage ? encodeURIComponent(stage) : ''}`;
     fetch(`/api/manual-entry?${params}`)
@@ -71,7 +74,8 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
       .then((data: { expenses?: SavedExpense[] }) => {
         setSavedExpenses(Array.isArray(data.expenses) ? data.expenses : []);
       })
-      .catch(() => setSavedExpenses([]));
+      .catch(() => setSavedExpenses([]))
+      .finally(() => setSavedLoading(false));
   }, [month, year, department, logisticsStage]);
 
   const loadSavedExpenses = () => {
@@ -82,7 +86,29 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
       .then((data: { expenses?: SavedExpense[] }) => {
         setSavedExpenses(Array.isArray(data.expenses) ? data.expenses : []);
       })
-      .catch(() => setSavedExpenses([]));
+      .catch(() => setSavedExpenses([]))
+      .finally(() => setSavedLoading(false));
+  };
+
+  const handleDeleteSaved = async (categoryId: string) => {
+    if (!confirm('Удалить эту запись?')) return;
+    setDeletingId(categoryId);
+    try {
+      const period = `${year}-${String(month).padStart(2, '0')}-01`;
+      const res = await fetch('/api/manual-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          period,
+          revenues: [],
+          expenses: [{ categoryId, amount: 0 }],
+        }),
+      });
+      if (!res.ok) throw new Error('Ошибка удаления');
+      await loadSavedExpenses();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   useEffect(() => {
@@ -251,34 +277,54 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
         )}
       </div>
 
-      {savedExpenses.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden max-w-2xl">
-          <h2 className="text-lg font-semibold text-slate-900 px-6 py-4 border-b border-slate-100">
-            Сохранённые затраты ({MONTHS[month - 1]} {year})
-          </h2>
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Статья</th>
-                <th className="px-6 py-2 text-right text-sm font-medium text-slate-600">Сумма</th>
-              </tr>
-            </thead>
-            <tbody>
-              {savedExpenses.map((e) => (
-                <tr key={e.categoryId} className="border-b border-slate-50">
-                  <td className="px-6 py-2 text-slate-900">{e.categoryName}</td>
-                  <td className="px-6 py-2 text-right text-slate-900 font-medium">{formatRub(e.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">
-            <span className="font-semibold text-slate-900">
-              Итого: {formatRub(savedExpenses.reduce((s, e) => s + e.amount, 0))}
-            </span>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden max-w-2xl">
+        <h2 className="text-lg font-semibold text-slate-900 px-6 py-4 border-b border-slate-100">
+          Сохранённые затраты ({MONTHS[month - 1]} {year})
+        </h2>
+        {savedLoading ? (
+          <div className="px-6 py-6 text-slate-500 animate-pulse">Загрузка...</div>
+        ) : savedExpenses.length === 0 ? (
+          <div className="px-6 py-6 text-slate-500 text-sm">
+            Нет сохранённых затрат за этот период. Введите данные выше и нажмите «Сохранить».
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Статья</th>
+                  <th className="px-6 py-2 text-right text-sm font-medium text-slate-600">Сумма</th>
+                  <th className="px-6 py-2 w-10" aria-label="Удалить" />
+                </tr>
+              </thead>
+              <tbody>
+                {savedExpenses.map((e) => (
+                  <tr key={e.categoryId} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="px-6 py-2 text-slate-900">{e.categoryName}</td>
+                    <td className="px-6 py-2 text-right text-slate-900 font-medium">{formatRub(e.amount)}</td>
+                    <td className="px-6 py-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSaved(e.categoryId)}
+                        disabled={deletingId === e.categoryId}
+                        className="p-1.5 text-slate-400 hover:text-red-600 disabled:opacity-50"
+                        title="Удалить"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <span className="font-semibold text-slate-900">
+                Итого: {formatRub(savedExpenses.reduce((s, e) => s + e.amount, 0))}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

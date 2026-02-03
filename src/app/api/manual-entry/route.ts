@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
 
   if (!month || !year) return Response.json({ error: 'month, year required' }, { status: 400 });
 
-  const period = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+  // Та же дата, что при сохранении (YYYY-MM-DD → UTC midnight), чтобы совпадать с POST
+  const periodStr = `${year}-${String(Number(month)).padStart(2, '0')}-01`;
+  const period = new Date(periodStr);
 
   const [revenues, allExpenses] = await Promise.all([
     prisma.manualRevenue.findMany({
