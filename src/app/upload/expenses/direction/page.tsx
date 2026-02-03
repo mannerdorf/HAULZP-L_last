@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function DirectionPage() {
-  return (
-    <UploadExpenseForm
-      department="DIRECTION"
-      logisticsStage={null}
-      label="Дирекция"
-      description="Расходы дирекции"
-      icon="building"
-    />
-  );
+  redirect('/upload/expenses?sub=direction');
 }

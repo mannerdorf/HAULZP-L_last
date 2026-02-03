@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function AdministrationPage() {
-  return (
-    <UploadExpenseForm
-      department="ADMINISTRATION"
-      logisticsStage={null}
-      label="Администрация"
-      description="Административные расходы"
-      icon="building"
-    />
-  );
+  redirect('/upload/expenses?sub=administration');
 }

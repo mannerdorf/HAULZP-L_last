@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function PickupMskPage() {
-  return (
-    <UploadExpenseForm
-      department="LOGISTICS_MSK"
-      logisticsStage="PICKUP"
-      label="Заборная логистика Москва"
-      description="Расходы на забор грузов в Москве"
-      icon="truck"
-    />
-  );
+  redirect('/upload/expenses?sub=pickup_msk');
 }

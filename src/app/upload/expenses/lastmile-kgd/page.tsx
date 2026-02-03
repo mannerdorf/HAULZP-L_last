@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function LastmileKgdPage() {
-  return (
-    <UploadExpenseForm
-      department="LOGISTICS_KGD"
-      logisticsStage="LAST_MILE"
-      label="Последняя миля Калининград"
-      description="Расходы на доставку до клиента в Калининграде"
-      icon="package"
-    />
-  );
+  redirect('/upload/expenses?sub=lastmile_kgd');
 }

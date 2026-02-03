@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function WarehouseMskPage() {
-  return (
-    <UploadExpenseForm
-      department="LOGISTICS_MSK"
-      logisticsStage="DEPARTURE_WAREHOUSE"
-      label="Склад Москва"
-      description="Расходы склада отправления в Москве"
-      icon="warehouse"
-    />
-  );
+  redirect('/upload/expenses?sub=warehouse_msk');
 }

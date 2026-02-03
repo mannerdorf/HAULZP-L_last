@@ -187,6 +187,30 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
 
       <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm max-w-2xl">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Ввод затрат</h2>
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          {subdivisionSelect}
+          <div className="flex gap-2">
+            <select
+              value={month}
+              onChange={(e) => setMonth(parseInt(e.target.value, 10))}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+            >
+              {MONTHS.map((m, i) => (
+                <option key={i} value={i + 1}>{m}</option>
+              ))}
+            </select>
+            <select
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value, 10))}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+            >
+              {[year - 2, year - 1, year, year + 1].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {catsLoading ? (
           <div className="animate-pulse text-slate-500">Загрузка справочника...</div>
         ) : filteredCats.length === 0 ? (
@@ -196,30 +220,6 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
           </p>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              {subdivisionSelect}
-              <div className="flex gap-2">
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-                  className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
-                >
-                  {MONTHS.map((m, i) => (
-                    <option key={i} value={i + 1}>{m}</option>
-                  ))}
-                </select>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(parseInt(e.target.value, 10))}
-                  className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
-                >
-                  {[year - 2, year - 1, year, year + 1].map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             <div className="space-y-3">
               {rows.map((row) => (
                 <div key={row.id} className="flex items-center gap-3">

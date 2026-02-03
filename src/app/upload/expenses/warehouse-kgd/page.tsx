@@ -1,13 +1,5 @@
-import { UploadExpenseForm } from '@/components/UploadExpenseForm';
+import { redirect } from 'next/navigation';
 
 export default function WarehouseKgdPage() {
-  return (
-    <UploadExpenseForm
-      department="LOGISTICS_KGD"
-      logisticsStage="ARRIVAL_WAREHOUSE"
-      label="Склад Калининград"
-      description="Расходы склада получения в Калининграде"
-      icon="warehouse"
-    />
-  );
+  redirect('/upload/expenses?sub=warehouse_kgd');
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { UploadExpenseForm } from '@/components/UploadExpenseForm';
 import { SUBDIVISIONS } from '@/lib/constants';
 
@@ -14,8 +15,17 @@ const ICON_MAP: Record<string, 'truck' | 'warehouse' | 'route' | 'package' | 'bu
   direction: 'building',
 };
 
+const VALID_IDS = new Set(SUBDIVISIONS.map((s) => s.id));
+
 export default function UploadExpensesPage() {
-  const [subdivisionId, setSubdivisionId] = useState<string>('pickup_msk');
+  const searchParams = useSearchParams();
+  const subParam = searchParams.get('sub');
+  const initial = subParam && VALID_IDS.has(subParam) ? subParam : 'pickup_msk';
+  const [subdivisionId, setSubdivisionId] = useState<string>(initial);
+
+  useEffect(() => {
+    if (subParam && VALID_IDS.has(subParam)) setSubdivisionId(subParam);
+  }, [subParam]);
 
   const sub = SUBDIVISIONS.find((s) => s.id === subdivisionId);
   if (!sub) return null;
