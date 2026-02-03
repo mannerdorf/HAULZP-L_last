@@ -6,10 +6,18 @@
 
 ```bash
 npm install
-npx prisma db push   # создание БД
-npm run db:seed      # тестовые данные (опционально)
-npm run dev          # http://localhost:3000
+cp .env.example .env   # заполните DATABASE_URL (Neon или локальный Postgres)
+npx prisma db push     # создание таблиц в БД
+npm run db:seed        # тестовые данные (опционально)
+npm run dev            # http://localhost:3000
 ```
+
+### База данных (Neon)
+
+1. Создайте проект в [Neon](https://console.neon.tech), скопируйте **Connection string** (лучше **Pooled** для Vercel).
+2. В `.env` задайте `DATABASE_URL=postgresql://...?sslmode=require`.
+3. В Vercel: **Settings → Environment Variables** → добавьте `DATABASE_URL` для Production/Preview.
+4. После первого деплоя выполните миграцию таблиц (один раз): локально с продакшен-URL или через `npx prisma db push`.
 
 ## Разделы
 
@@ -34,5 +42,5 @@ npm run dev          # http://localhost:3000
 
 - Next.js 14, React, TypeScript
 - Tailwind CSS, Recharts
-- Prisma, SQLite
+- Prisma, PostgreSQL (Neon)
 - xlsx для парсинга Excel/CSV
