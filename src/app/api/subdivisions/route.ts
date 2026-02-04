@@ -37,21 +37,32 @@ export async function GET() {
   }
 }
 
+function slugFromName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9а-яё_]/gi, '')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '') || 'sub';
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
       return Response.json({ error: 'Название обязательно' }, { status: 400 });
     }
-    if (!body.department) {
-      return Response.json({ error: 'Укажите department' }, { status: 400 });
-    }
+    const name = body.name.trim();
+    const code = body.code?.trim() || slugFromName(name);
+    const department = body.department || 'ADMINISTRATION';
+    const logisticsStage = body.logisticsStage ?? null;
     const sub = await prisma.subdivision.create({
       data: {
-        code: body.code?.trim() || null,
-        name: body.name.trim(),
-        department: body.department,
-        logisticsStage: body.logisticsStage ?? null,
+        code: code || null,
+        name,
+        department,
+        logisticsStage,
         sortOrder: body.sortOrder ?? 0,
       },
     });

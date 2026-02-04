@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, FileSpreadsheet, Plus, X, Trash2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, Plus, X, Trash2, Info } from 'lucide-react';
 import { SUBDIVISIONS } from '@/lib/constants';
 
 type Row = { counterparty: string; totalAmount: number; count: number; accounted?: boolean };
@@ -34,6 +34,7 @@ export default function UploadStatementPage() {
     name: '',
     subdivisionId: 'pickup_msk',
     type: 'OPEX' as string,
+    amount: 0,
   });
   const years = [year - 1, year, year + 1];
 
@@ -78,6 +79,7 @@ export default function UploadStatementPage() {
       name: row.counterparty,
       subdivisionId: 'pickup_msk',
       type: 'OPEX',
+      amount: row.totalAmount,
     });
     setSaveExpense(true);
     setSaveError(null);
@@ -133,7 +135,7 @@ export default function UploadStatementPage() {
           month,
           year,
           saveExpense,
-          amount: modal.totalAmount,
+          amount: form.amount,
         }),
       });
       const data = await res.json();
@@ -298,12 +300,27 @@ export default function UploadStatementPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 mb-2">
               Контрагент: <span className="font-medium text-slate-700">{modal.counterparty}</span>
               <br />
-              Сумма: {formatRub(modal.totalAmount)} ({modal.count} операций)
+              <span className="text-slate-400">({modal.count} операций, сумма по выписке: {formatRub(modal.totalAmount)})</span>
             </p>
             <form onSubmit={handleCreateInReference} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Сумма внесения (₽)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.amount > 0 ? form.amount : ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setForm((f) => ({ ...f, amount: Number.isFinite(v) ? v : 0 }));
+                  }}
+                  placeholder={formatRub(modal.totalAmount)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Название статьи</label>
                 <input
@@ -329,7 +346,17 @@ export default function UploadStatementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Тип расхода</label>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 mb-1">
+                  Тип расхода
+                  <span className="group relative inline-flex">
+                    <Info className="w-4 h-4 text-slate-400 cursor-help hover:text-slate-600" />
+                    <span className="absolute left-0 top-full mt-1.5 hidden group-hover:block z-20 w-72 p-3 text-xs text-left text-slate-600 bg-slate-100 border border-slate-200 rounded-lg shadow-lg">
+                      <strong>COGS</strong> — себестоимость: транспорт, хранение, тара, упаковка, прямые затраты на доставку<br /><br />
+                      <strong>OPEX</strong> — операционные расходы: аренда, зарплата, маркетинг, связь, офис, логистика (не прямая)<br /><br />
+                      <strong>CAPEX</strong> — капитальные расходы: оборудование, техника, недвижимость, долгосрочные активы
+                    </span>
+                  </span>
+                </label>
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
@@ -348,7 +375,7 @@ export default function UploadStatementPage() {
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span>
-                  Записать сумму {formatRub(modal.totalAmount)} в расходы за выбранный период
+                  Записать сумму {formatRub(form.amount)} в расходы за выбранный период
                 </span>
               </label>
               {saveError && (

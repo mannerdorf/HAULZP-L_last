@@ -63,6 +63,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   const [savedExpenses, setSavedExpenses] = useState<SavedExpense[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingAmount, setEditingAmount] = useState<{ categoryId: string; value: string } | null>(null);
   const [catsLoading, setCatsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -90,6 +91,26 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
       })
       .catch(() => setSavedExpenses([]))
       .finally(() => setSavedLoading(false));
+  };
+
+  const handleUpdateSavedAmount = async (categoryId: string, newAmount: number) => {
+    setEditingAmount(null);
+    const period = `${year}-${String(month).padStart(2, '0')}-01`;
+    try {
+      const res = await fetch('/api/manual-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          period,
+          revenues: [],
+          expenses: [{ categoryId, amount: newAmount }],
+        }),
+      });
+      if (!res.ok) throw new Error('Ошибка сохранения');
+      await loadSavedExpenses();
+    } catch {
+      await loadSavedExpenses();
+    }
   };
 
   const handleDeleteSaved = async (categoryId: string) => {
@@ -301,10 +322,32 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                 </tr>
               </thead>
               <tbody>
-                {savedExpenses.map((e) => (
+                {savedExpenses.map((e) => {
+                  const isEditing = editingAmount?.categoryId === e.categoryId;
+                  const displayValue = isEditing ? editingAmount.value : String(e.amount);
+                  return (
                   <tr key={e.categoryId} className="border-b border-slate-50 hover:bg-slate-50/50">
                     <td className="px-6 py-2 text-slate-900">{e.categoryName}</td>
-                    <td className="px-6 py-2 text-right text-slate-900 font-medium">{formatRub(e.amount)}</td>
+                    <td className="px-6 py-2 text-right">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={displayValue}
+                        onChange={(ev) => setEditingAmount({ categoryId: e.categoryId, value: ev.target.value })}
+                        onFocus={() => setEditingAmount({ categoryId: e.categoryId, value: String(e.amount) })}
+                        onBlur={(ev) => {
+                          const raw = ev.target.value.replace(/\s/g, '').replace(/,/g, '.');
+                          const v = parseFloat(raw);
+                          if (Number.isFinite(v) && v >= 0 && Math.abs(v - e.amount) > 0.001) {
+                            handleUpdateSavedAmount(e.categoryId, v);
+                          } else {
+                            setEditingAmount(null);
+                          }
+                        }}
+                        className="w-28 text-right border border-slate-200 rounded px-2 py-1 text-slate-900 font-medium focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      />
+                    </td>
                     <td className="px-6 py-2">
                       <button
                         type="button"
@@ -317,7 +360,8 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
             <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">

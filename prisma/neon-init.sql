@@ -2,7 +2,7 @@
 -- Если таблицы уже есть, выполните один раз или используйте: npx prisma db push
 
 -- CreateTable
-CREATE TABLE "Operation" (
+CREATE TABLE IF NOT EXISTS "Operation" (
     "id" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "counterparty" TEXT NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE "Operation" (
 );
 
 -- CreateTable
-CREATE TABLE "Sale" (
+CREATE TABLE IF NOT EXISTS "Sale" (
     "id" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "client" TEXT NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE "Sale" (
 );
 
 -- CreateTable
-CREATE TABLE "CreditPayment" (
+CREATE TABLE IF NOT EXISTS "CreditPayment" (
     "id" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "counterparty" TEXT NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE "CreditPayment" (
 );
 
 -- CreateTable
-CREATE TABLE "IncomeCategory" (
+CREATE TABLE IF NOT EXISTS "IncomeCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "direction" TEXT NOT NULL,
@@ -88,7 +88,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "OpeningBalance_period_key" ON "OpeningBalance
 CREATE INDEX IF NOT EXISTS "OpeningBalance_period_idx" ON "OpeningBalance"("period");
 
 -- CreateTable
-CREATE TABLE "ExpenseCategory" (
+CREATE TABLE IF NOT EXISTS "ExpenseCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "department" TEXT NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE "ExpenseCategory" (
 );
 
 -- CreateTable
-CREATE TABLE "ManualRevenue" (
+CREATE TABLE IF NOT EXISTS "ManualRevenue" (
     "id" TEXT NOT NULL,
     "period" TIMESTAMP(3) NOT NULL,
     "categoryId" TEXT NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE "ManualRevenue" (
 );
 
 -- CreateTable
-CREATE TABLE "ManualExpense" (
+CREATE TABLE IF NOT EXISTS "ManualExpense" (
     "id" TEXT NOT NULL,
     "period" TIMESTAMP(3) NOT NULL,
     "categoryId" TEXT NOT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE "ManualExpense" (
 );
 
 -- CreateTable
-CREATE TABLE "StatementExpense" (
+CREATE TABLE IF NOT EXISTS "StatementExpense" (
     "id" TEXT NOT NULL,
     "period" TIMESTAMP(3) NOT NULL,
     "counterparty" TEXT NOT NULL,
@@ -138,7 +138,7 @@ CREATE TABLE "StatementExpense" (
 );
 
 -- CreateTable
-CREATE TABLE "ClassificationRule" (
+CREATE TABLE IF NOT EXISTS "ClassificationRule" (
     "id" TEXT NOT NULL,
     "counterparty" TEXT NOT NULL,
     "purposePattern" TEXT,
@@ -152,25 +152,46 @@ CREATE TABLE "ClassificationRule" (
 );
 
 -- CreateIndex
-CREATE INDEX "Operation_date_idx" ON "Operation"("date");
-CREATE INDEX "Operation_operationType_idx" ON "Operation"("operationType");
-CREATE INDEX "Operation_department_idx" ON "Operation"("department");
-CREATE INDEX "Operation_direction_idx" ON "Operation"("direction");
-CREATE INDEX "Sale_date_idx" ON "Sale"("date");
-CREATE INDEX "Sale_direction_idx" ON "Sale"("direction");
-CREATE INDEX "CreditPayment_date_idx" ON "CreditPayment"("date");
-CREATE INDEX "CreditPayment_type_idx" ON "CreditPayment"("type");
-CREATE INDEX "ExpenseCategory_department_idx" ON "ExpenseCategory"("department");
-CREATE INDEX "ManualRevenue_period_idx" ON "ManualRevenue"("period");
-CREATE UNIQUE INDEX "ManualRevenue_period_categoryId_key" ON "ManualRevenue"("period", "categoryId");
-CREATE INDEX "ManualExpense_period_idx" ON "ManualExpense"("period");
-CREATE UNIQUE INDEX "ManualExpense_period_categoryId_key" ON "ManualExpense"("period", "categoryId");
-CREATE INDEX "StatementExpense_period_idx" ON "StatementExpense"("period");
-CREATE INDEX "StatementExpense_accounted_idx" ON "StatementExpense"("accounted");
-CREATE UNIQUE INDEX "StatementExpense_period_counterparty_key" ON "StatementExpense"("period", "counterparty");
-CREATE UNIQUE INDEX "ClassificationRule_counterparty_key" ON "ClassificationRule"("counterparty");
+CREATE INDEX IF NOT EXISTS "Operation_date_idx" ON "Operation"("date");
+CREATE INDEX IF NOT EXISTS "Operation_operationType_idx" ON "Operation"("operationType");
+CREATE INDEX IF NOT EXISTS "Operation_department_idx" ON "Operation"("department");
+CREATE INDEX IF NOT EXISTS "Operation_direction_idx" ON "Operation"("direction");
+CREATE INDEX IF NOT EXISTS "Sale_date_idx" ON "Sale"("date");
+CREATE INDEX IF NOT EXISTS "Sale_direction_idx" ON "Sale"("direction");
+CREATE INDEX IF NOT EXISTS "CreditPayment_date_idx" ON "CreditPayment"("date");
+CREATE INDEX IF NOT EXISTS "CreditPayment_type_idx" ON "CreditPayment"("type");
+CREATE INDEX IF NOT EXISTS "ExpenseCategory_department_idx" ON "ExpenseCategory"("department");
+CREATE INDEX IF NOT EXISTS "ManualRevenue_period_idx" ON "ManualRevenue"("period");
+CREATE UNIQUE INDEX IF NOT EXISTS "ManualRevenue_period_categoryId_key" ON "ManualRevenue"("period", "categoryId");
+CREATE INDEX IF NOT EXISTS "ManualExpense_period_idx" ON "ManualExpense"("period");
+CREATE UNIQUE INDEX IF NOT EXISTS "ManualExpense_period_categoryId_key" ON "ManualExpense"("period", "categoryId");
+CREATE INDEX IF NOT EXISTS "StatementExpense_period_idx" ON "StatementExpense"("period");
+CREATE INDEX IF NOT EXISTS "StatementExpense_accounted_idx" ON "StatementExpense"("accounted");
+CREATE UNIQUE INDEX IF NOT EXISTS "StatementExpense_period_counterparty_key" ON "StatementExpense"("period", "counterparty");
+CREATE UNIQUE INDEX IF NOT EXISTS "ClassificationRule_counterparty_key" ON "ClassificationRule"("counterparty");
 
--- AddForeignKey
-ALTER TABLE "ManualRevenue" ADD CONSTRAINT "ManualRevenue_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "IncomeCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ManualExpense" ADD CONSTRAINT "ManualExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "StatementExpense" ADD CONSTRAINT "StatementExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (идемпотентно: не падает, если ограничение уже есть)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ManualRevenue_categoryId_fkey') THEN
+    ALTER TABLE "ManualRevenue" ADD CONSTRAINT "ManualRevenue_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "IncomeCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ManualExpense_categoryId_fkey') THEN
+    ALTER TABLE "ManualExpense" ADD CONSTRAINT "ManualExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'StatementExpense_categoryId_fkey') THEN
+    ALTER TABLE "StatementExpense" ADD CONSTRAINT "StatementExpense_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ExpenseCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+-- Сид подразделений (как в меню). Выполните после создания таблиц, если таблица Subdivision пустая.
+INSERT INTO "Subdivision" (id, code, name, department, "logisticsStage", "sortOrder")
+VALUES
+  (gen_random_uuid()::text, 'pickup_msk', 'Заборная логистика Москва', 'LOGISTICS_MSK', 'PICKUP', 0),
+  (gen_random_uuid()::text, 'warehouse_msk', 'Склад Москва', 'LOGISTICS_MSK', 'DEPARTURE_WAREHOUSE', 1),
+  (gen_random_uuid()::text, 'mainline', 'Магистраль', 'LOGISTICS_MSK', 'MAINLINE', 2),
+  (gen_random_uuid()::text, 'warehouse_kgd', 'Склад Калининград', 'LOGISTICS_KGD', 'ARRIVAL_WAREHOUSE', 3),
+  (gen_random_uuid()::text, 'lastmile_kgd', 'Последняя миля Калининград', 'LOGISTICS_KGD', 'LAST_MILE', 4),
+  (gen_random_uuid()::text, 'administration', 'Администрация', 'ADMINISTRATION', NULL, 5),
+  (gen_random_uuid()::text, 'direction', 'Дирекция', 'DIRECTION', NULL, 6)
+ON CONFLICT ("code") DO NOTHING;
