@@ -99,29 +99,35 @@ model ExpenseCategory {
 }
 
 // Ручной ввод дохода за период
+// direction + transportType: МСК→КГД/КГД→МСК и паром/авто (иначе "").
 model ManualRevenue {
-  id         String   @id @default(cuid())
-  period     DateTime // первый день месяца
-  categoryId String
-  amount     Float
-  createdAt  DateTime @default(now())
-  category   IncomeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  period        DateTime // первый день месяца
+  categoryId    String
+  amount        Float
+  direction     String   @default("") // "" | MSK_TO_KGD | KGD_TO_MSK
+  transportType String   @default("")  // "" | AUTO | FERRY
+  createdAt     DateTime @default(now())
+  category      IncomeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@unique([period, categoryId])
+  @@unique([period, categoryId, direction, transportType])
   @@index([period])
 }
 
 // Ручной ввод расхода за период
+// Для магистрали: direction + transportType задают направление и паром/авто (иначе "").
 model ManualExpense {
-  id         String   @id @default(cuid())
-  period     DateTime
-  categoryId String
-  amount     Float
-  comment    String?
-  createdAt  DateTime @default(now())
-  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  period        DateTime
+  categoryId    String
+  amount        Float
+  comment       String?
+  direction     String   @default("") // "" | MSK_TO_KGD | KGD_TO_MSK
+  transportType String   @default("")  // "" | AUTO | FERRY
+  createdAt     DateTime @default(now())
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@unique([period, categoryId])
+  @@unique([period, categoryId, direction, transportType])
   @@index([period])
 }
 

@@ -7,6 +7,16 @@ import { DEPARTMENT_LABELS, DIRECTION_LABELS } from '@/lib/constants';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
+const REVENUE_DIRECTIONS = ['MSK_TO_KGD', 'KGD_TO_MSK'] as const;
+const REVENUE_TRANSPORT = [
+  { value: 'AUTO', label: 'авто' },
+  { value: 'FERRY', label: 'паром' },
+] as const;
+
+function revenueKey(categoryId: string, direction: string, transportType: string) {
+  return `${categoryId}:${direction}:${transportType}`;
+}
+
 interface IncomeCat {
   id: string;
   name: string;
@@ -54,8 +64,10 @@ export default function EntryPage() {
       .then((r) => r.json())
       .then((data) => {
         const rev: Record<string, string> = {};
-        (data.revenues || []).forEach((r: { categoryId: string; amount: number }) => {
-          rev[r.categoryId] = String(r.amount || '');
+        (data.revenues || []).forEach((r: { categoryId: string; amount: number; direction?: string; transportType?: string }) => {
+          const d = r.direction ?? '';
+          const t = r.transportType ?? '';
+          rev[revenueKey(r.categoryId, d, t)] = String(r.amount || '');
         });
         setRevenues(rev);
         const exp: Record<string, string> = {};
@@ -69,15 +81,22 @@ export default function EntryPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const revenueEntries = incomeCats.flatMap((c) =>
+        REVENUE_DIRECTIONS.flatMap((d) =>
+          REVENUE_TRANSPORT.map((t) => ({
+            categoryId: c.id,
+            amount: parseFloat((revenues[revenueKey(c.id, d, t.value)] || '0').replace(/\s/g, '').replace(/,/g, '.')) || 0,
+            direction: d,
+            transportType: t.value,
+          }))
+        )
+      );
       const res = await fetch('/api/manual-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           period,
-          revenues: incomeCats.map((c) => ({
-            categoryId: c.id,
-            amount: parseFloat((revenues[c.id] || '0').replace(/\s/g, '').replace(/,/g, '.')) || 0,
-          })),
+          revenues: revenueEntries,
           expenses: expenseCats.map((c) => ({
             categoryId: c.id,
             amount: parseFloat((expenses[c.id] || '0').replace(/\s/g, '').replace(/,/g, '.')) || 0,
@@ -90,7 +109,10 @@ export default function EntryPage() {
     }
   };
 
-  const totalRevenue = Object.values(revenues).reduce((s, v) => s + (parseFloat(v.replace(/\s/g, '').replace(/,/g, '.')) || 0), 0);
+  const totalRevenue = Object.values(revenues).reduce(
+    (s, v) => s + (parseFloat(String(v).replace(/\s/g, '').replace(/,/g, '.')) || 0),
+    0
+  );
   const totalExpense = Object.values(expenses).reduce((s, v) => s + (parseFloat(v.replace(/\s/g, '').replace(/,/g, '.')) || 0), 0);
 
   const expByDept = expenseCats.reduce((acc, c) => {
@@ -150,17 +172,30 @@ export default function EntryPage() {
                 </p>
               ) : (
                 incomeCats.map((c) => (
-                  <div key={c.id} className="flex items-center gap-4">
-                    <label className="flex-1 text-slate-700">
+                  <div key={c.id} className="border-b border-slate-100 pb-3 last:border-0">
+                    <div className="font-medium text-slate-700 mb-2">
                       {c.name} <span className="text-slate-400 text-sm">({(DIRECTION_LABELS as Record<string, string>)[c.direction]})</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={revenues[c.id] ?? ''}
-                      onChange={(e) => setRevenues((r) => ({ ...r, [c.id]: e.target.value }))}
-                      placeholder="0"
-                      className="w-32 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-right"
-                    />
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      {REVENUE_DIRECTIONS.flatMap((d) =>
+                        REVENUE_TRANSPORT.map((t) => (
+                          <div key={`${d}-${t.value}`} className="flex items-center gap-2">
+                            <label className="flex-1 text-slate-600 text-sm">
+                              {(DIRECTION_LABELS as Record<string, string>)[d]} {t.label}
+                            </label>
+                            <input
+                              type="text"
+                              value={revenues[revenueKey(c.id, d, t.value)] ?? ''}
+                              onChange={(e) =>
+                                setRevenues((r) => ({ ...r, [revenueKey(c.id, d, t.value)]: e.target.value }))
+                              }
+                              placeholder="0"
+                              className="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-slate-900 text-right text-sm"
+                            />
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 ))
               )}

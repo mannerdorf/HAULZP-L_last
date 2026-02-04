@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS "ManualRevenue" (
     "period" TIMESTAMP(3) NOT NULL,
     "categoryId" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
+    "direction" TEXT NOT NULL DEFAULT '',
+    "transportType" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ManualRevenue_pkey" PRIMARY KEY ("id")
@@ -118,6 +120,8 @@ CREATE TABLE IF NOT EXISTS "ManualExpense" (
     "categoryId" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
     "comment" TEXT,
+    "direction" TEXT NOT NULL DEFAULT '',
+    "transportType" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ManualExpense_pkey" PRIMARY KEY ("id")
@@ -163,9 +167,9 @@ CREATE INDEX IF NOT EXISTS "CreditPayment_date_idx" ON "CreditPayment"("date");
 CREATE INDEX IF NOT EXISTS "CreditPayment_type_idx" ON "CreditPayment"("type");
 CREATE INDEX IF NOT EXISTS "ExpenseCategory_department_idx" ON "ExpenseCategory"("department");
 CREATE INDEX IF NOT EXISTS "ManualRevenue_period_idx" ON "ManualRevenue"("period");
-CREATE UNIQUE INDEX IF NOT EXISTS "ManualRevenue_period_categoryId_key" ON "ManualRevenue"("period", "categoryId");
+CREATE UNIQUE INDEX IF NOT EXISTS "ManualRevenue_period_categoryId_direction_transportType_key" ON "ManualRevenue"("period", "categoryId", "direction", "transportType");
 CREATE INDEX IF NOT EXISTS "ManualExpense_period_idx" ON "ManualExpense"("period");
-CREATE UNIQUE INDEX IF NOT EXISTS "ManualExpense_period_categoryId_key" ON "ManualExpense"("period", "categoryId");
+CREATE UNIQUE INDEX IF NOT EXISTS "ManualExpense_period_categoryId_direction_transportType_key" ON "ManualExpense"("period", "categoryId", "direction", "transportType");
 CREATE INDEX IF NOT EXISTS "StatementExpense_period_idx" ON "StatementExpense"("period");
 CREATE INDEX IF NOT EXISTS "StatementExpense_accounted_idx" ON "StatementExpense"("accounted");
 CREATE UNIQUE INDEX IF NOT EXISTS "StatementExpense_period_counterparty_key" ON "StatementExpense"("period", "counterparty");
@@ -202,5 +206,40 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualExpense' AND column_name = 'comment') THEN
     ALTER TABLE "ManualExpense" ADD COLUMN "comment" TEXT;
+  END IF;
+END $$;
+
+-- Доходы: направление и паром/авто (ManualRevenue)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualRevenue' AND column_name = 'direction') THEN
+    ALTER TABLE "ManualRevenue" ADD COLUMN "direction" TEXT NOT NULL DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualRevenue' AND column_name = 'transportType') THEN
+    ALTER TABLE "ManualRevenue" ADD COLUMN "transportType" TEXT NOT NULL DEFAULT '';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ManualRevenue_period_categoryId_key') THEN
+    DROP INDEX IF EXISTS "ManualRevenue_period_categoryId_key";
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ManualRevenue_period_categoryId_direction_transportType_key') THEN
+    CREATE UNIQUE INDEX "ManualRevenue_period_categoryId_direction_transportType_key" ON "ManualRevenue"("period", "categoryId", "direction", "transportType");
+  END IF;
+END $$;
+
+-- Магистраль: направление и паром/авто (ManualExpense)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualExpense' AND column_name = 'direction') THEN
+    ALTER TABLE "ManualExpense" ADD COLUMN "direction" TEXT NOT NULL DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualExpense' AND column_name = 'transportType') THEN
+    ALTER TABLE "ManualExpense" ADD COLUMN "transportType" TEXT NOT NULL DEFAULT '';
+  END IF;
+  -- Заменить уникальный индекс на (period, categoryId, direction, transportType)
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ManualExpense_period_categoryId_key') THEN
+    DROP INDEX IF EXISTS "ManualExpense_period_categoryId_key";
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ManualExpense_period_categoryId_direction_transportType_key') THEN
+    CREATE UNIQUE INDEX "ManualExpense_period_categoryId_direction_transportType_key" ON "ManualExpense"("period", "categoryId", "direction", "transportType");
   END IF;
 END $$;

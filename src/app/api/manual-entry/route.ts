@@ -35,12 +35,19 @@ export async function GET(req: NextRequest) {
   }
 
   return Response.json({
-    revenues: revenues.map((r) => ({ categoryId: r.categoryId, amount: r.amount })),
+    revenues: revenues.map((r) => ({
+      categoryId: r.categoryId,
+      amount: r.amount,
+      direction: r.direction ?? '',
+      transportType: r.transportType ?? '',
+    })),
     expenses: expenses.map((e) => ({
       categoryId: e.categoryId,
       categoryName: e.category.name,
       amount: e.amount,
       comment: e.comment ?? null,
+      direction: e.direction ?? '',
+      transportType: e.transportType ?? '',
     })),
   });
 }
@@ -56,16 +63,34 @@ export async function POST(req: NextRequest) {
     for (const r of revenues || []) {
       if (!r.categoryId) continue;
       const amount = parseFloat(r.amount) || 0;
+      const direction = r.direction != null && typeof r.direction === 'string' ? r.direction.trim() || '' : '';
+      const transportType = r.transportType != null && typeof r.transportType === 'string' ? r.transportType.trim() || '' : '';
       if (amount === 0) {
         await tx.manualRevenue.deleteMany({
-          where: { period: periodDate, categoryId: r.categoryId },
+          where: {
+            period: periodDate,
+            categoryId: r.categoryId,
+            direction,
+            transportType,
+          },
         });
       } else {
         await tx.manualRevenue.upsert({
           where: {
-            period_categoryId: { period: periodDate, categoryId: r.categoryId },
+            period_categoryId_direction_transportType: {
+              period: periodDate,
+              categoryId: r.categoryId,
+              direction,
+              transportType,
+            },
           },
-          create: { period: periodDate, categoryId: r.categoryId, amount },
+          create: {
+            period: periodDate,
+            categoryId: r.categoryId,
+            amount,
+            direction,
+            transportType,
+          },
           update: { amount },
         });
       }
@@ -74,16 +99,35 @@ export async function POST(req: NextRequest) {
       if (!e.categoryId) continue;
       const amount = parseFloat(e.amount) || 0;
       const comment = e.comment != null && typeof e.comment === 'string' ? e.comment.trim() || null : null;
+      const direction = e.direction != null && typeof e.direction === 'string' ? e.direction.trim() || '' : '';
+      const transportType = e.transportType != null && typeof e.transportType === 'string' ? e.transportType.trim() || '' : '';
       if (amount === 0) {
         await tx.manualExpense.deleteMany({
-          where: { period: periodDate, categoryId: e.categoryId },
+          where: {
+            period: periodDate,
+            categoryId: e.categoryId,
+            direction,
+            transportType,
+          },
         });
       } else {
         await tx.manualExpense.upsert({
           where: {
-            period_categoryId: { period: periodDate, categoryId: e.categoryId },
+            period_categoryId_direction_transportType: {
+              period: periodDate,
+              categoryId: e.categoryId,
+              direction,
+              transportType,
+            },
           },
-          create: { period: periodDate, categoryId: e.categoryId, amount, comment },
+          create: {
+            period: periodDate,
+            categoryId: e.categoryId,
+            amount,
+            comment,
+            direction,
+            transportType,
+          },
           update: { amount, comment },
         });
       }
