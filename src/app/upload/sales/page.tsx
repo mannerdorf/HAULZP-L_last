@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Save, CheckCircle } from 'lucide-react';
+import { DIRECTION_LABELS } from '@/lib/constants';
 
 const MONTHS = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -20,11 +21,11 @@ interface RowState {
   revenue: string;
 }
 
-const ROWS: { direction: Direction; transportType: TransportType; label: string }[] = [
-  { direction: 'MSK_TO_KGD', transportType: 'AUTO', label: 'Мск–КГД авто' },
-  { direction: 'MSK_TO_KGD', transportType: 'FERRY', label: 'Мск–КГД паром' },
-  { direction: 'KGD_TO_MSK', transportType: 'FERRY', label: 'КГД–МСК Паром' },
-];
+function rowLabel(direction: string, transportType: string): string {
+  const dir = (DIRECTION_LABELS as Record<string, string>)[direction] ?? direction;
+  const transport = transportType === 'FERRY' ? 'паром' : 'авто';
+  return `${dir} ${transport}`;
+}
 
 function parseNum(s: string): number {
   return parseFloat(String(s).replace(/\s/g, '').replace(/,/g, '.')) || 0;
@@ -34,15 +35,7 @@ export default function UploadSalesPage() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
-  const [rows, setRows] = useState<RowState[]>(
-    ROWS.map((r) => ({
-      ...r,
-      weightKg: '',
-      volume: '',
-      paidWeightKg: '',
-      revenue: '',
-    }))
-  );
+  const [rows, setRows] = useState<RowState[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -63,24 +56,18 @@ export default function UploadSalesPage() {
       .then((data) => {
         if (data.rows && Array.isArray(data.rows)) {
           setRows(
-            ROWS.map((r) => {
-              const found = data.rows.find(
-                (x: { direction: string; transportType: string }) =>
-                  x.direction === r.direction && x.transportType === r.transportType
-              );
-              return {
-                direction: r.direction,
-                transportType: r.transportType,
-                weightKg: found?.weightKg != null ? String(found.weightKg) : '',
-                volume: found?.volume != null ? String(found.volume) : '',
-                paidWeightKg: found?.paidWeightKg != null ? String(found.paidWeightKg) : '',
-                revenue: found?.revenue != null ? String(found.revenue) : '',
-              };
-            })
+            data.rows.map((x: { direction: string; transportType: string; weightKg?: number; volume?: number; paidWeightKg?: number; revenue?: number }) => ({
+              direction: (x.direction || 'MSK_TO_KGD') as Direction,
+              transportType: (x.transportType || 'AUTO') as TransportType,
+              weightKg: x.weightKg != null ? String(x.weightKg) : '',
+              volume: x.volume != null ? String(x.volume) : '',
+              paidWeightKg: x.paidWeightKg != null ? String(x.paidWeightKg) : '',
+              revenue: x.revenue != null ? String(x.revenue) : '',
+            }))
           );
         }
       })
-      .catch(() => setRows(ROWS.map((r) => ({ ...r, weightKg: '', volume: '', paidWeightKg: '', revenue: '' }))))
+      .catch(() => setRows([]))
       .finally(() => setLoading(false));
   }, [month, year]);
 
@@ -129,7 +116,10 @@ export default function UploadSalesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Продажи</h1>
-        <p className="text-slate-500">Ручной ввод по направлениям и типу перевозки</p>
+        <p className="text-slate-500">
+          Ручной ввод по направлениям и типу перевозки. Направления задаются в{' '}
+          <a href="/references/income" className="text-primary-600 underline">Справочнике доходов</a>.
+        </p>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm max-w-3xl">
@@ -163,7 +153,7 @@ export default function UploadSalesPage() {
                 key={`${row.direction}-${row.transportType}`}
                 className="p-4 rounded-xl border border-slate-200 bg-slate-50/50"
               >
-                <h3 className="font-medium text-slate-800 mb-3">{ROWS[index].label}</h3>
+                <h3 className="font-medium text-slate-800 mb-3">{rowLabel(row.direction, row.transportType)}</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Вес, кг</label>

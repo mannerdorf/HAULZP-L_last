@@ -1,11 +1,37 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const ROWS = [
+const FALLBACK_ROWS = [
   { direction: 'MSK_TO_KGD' as const, transportType: 'AUTO' as const },
   { direction: 'MSK_TO_KGD' as const, transportType: 'FERRY' as const },
-  { direction: 'KGD_TO_MSK' as const, transportType: 'AUTO' as const },
+  { direction: 'KGD_TO_MSK' as const, transportType: 'FERRY' as const },
 ];
+
+async function getRowsFromIncomeCategories() {
+  const cats = await prisma.incomeCategory.findMany({
+    where: {
+      direction: { in: ['MSK_TO_KGD', 'KGD_TO_MSK'] },
+      transportType: { in: ['AUTO', 'FERRY'] },
+    },
+  });
+  const seen = new Set<string>();
+  const rows: { direction: 'MSK_TO_KGD' | 'KGD_TO_MSK'; transportType: 'AUTO' | 'FERRY' }[] = [];
+  for (const c of cats) {
+    const key = `${c.direction}:${c.transportType}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      rows.push({
+        direction: c.direction as 'MSK_TO_KGD' | 'KGD_TO_MSK',
+        transportType: c.transportType as 'AUTO' | 'FERRY',
+      });
+    }
+  }
+  rows.sort((a, b) => {
+    if (a.direction !== b.direction) return a.direction.localeCompare(b.direction);
+    return (a.transportType === 'AUTO' ? 0 : 1) - (b.transportType === 'AUTO' ? 0 : 1);
+  });
+  return rows.length > 0 ? rows : FALLBACK_ROWS;
+}
 
 type ManualSaleRow = {
   direction?: string;
@@ -24,13 +50,16 @@ export async function GET(req: NextRequest) {
 
   const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
 
-  const sales = await prisma.sale.findMany({
-    where: { date },
-    orderBy: [{ direction: 'asc' }, { transportType: 'asc' }],
-  });
+  const [rows, sales] = await Promise.all([
+    getRowsFromIncomeCategories(),
+    prisma.sale.findMany({
+      where: { date },
+      orderBy: [{ direction: 'asc' }, { transportType: 'asc' }],
+    }),
+  ]);
 
   const byKey: Record<string, { weightKg: number; volume: number; paidWeightKg: number; revenue: number }> = {};
-  ROWS.forEach(({ direction, transportType }) => {
+  rows.forEach(({ direction, transportType }) => {
     const key = `${direction}:${transportType}`;
     byKey[key] = { weightKg: 0, volume: 0, paidWeightKg: 0, revenue: 0 };
   });
@@ -47,7 +76,7 @@ export async function GET(req: NextRequest) {
   });
 
   return Response.json({
-    rows: ROWS.map(({ direction, transportType }) => ({
+    rows: rows.map(({ direction, transportType }) => ({
       direction,
       transportType,
       ...byKey[`${direction}:${transportType}`],
