@@ -117,6 +117,7 @@ model ManualExpense {
   period     DateTime
   categoryId String
   amount     Float
+  comment    String?
   createdAt  DateTime @default(now())
   category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

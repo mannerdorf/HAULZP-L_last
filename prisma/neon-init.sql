@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS "ManualExpense" (
     "period" TIMESTAMP(3) NOT NULL,
     "categoryId" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
+    "comment" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ManualExpense_pkey" PRIMARY KEY ("id")
@@ -195,3 +196,11 @@ VALUES
   (gen_random_uuid()::text, 'administration', 'Администрация', 'ADMINISTRATION', NULL, 5),
   (gen_random_uuid()::text, 'direction', 'Дирекция', 'DIRECTION', NULL, 6)
 ON CONFLICT ("code") DO NOTHING;
+
+-- Добавить колонку comment в ManualExpense, если её ещё нет (для уже существующих БД)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ManualExpense' AND column_name = 'comment') THEN
+    ALTER TABLE "ManualExpense" ADD COLUMN "comment" TEXT;
+  END IF;
+END $$;

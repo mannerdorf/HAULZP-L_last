@@ -6,7 +6,7 @@ import { SUBDIVISIONS } from '@/lib/constants';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { counterparty, name, subdivisionId, type, month, year, saveExpense, amount } = body;
+    const { counterparty, name, subdivisionId, type, month, year, saveExpense, amount, comment } = body;
 
     if (!counterparty || typeof counterparty !== 'string' || !counterparty.trim()) {
       return Response.json({ error: 'Укажите контрагента' }, { status: 400 });
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       const shouldSave = saveExpense !== false;
       const amt = Number(amount) || 0;
       if (shouldSave && amt !== 0) {
+        const commentStr = comment && typeof comment === 'string' ? comment.trim() || null : null;
         await prisma.manualExpense.upsert({
           where: {
             period_categoryId: {
@@ -65,9 +66,11 @@ export async function POST(req: NextRequest) {
             period,
             categoryId: category.id,
             amount: amt,
+            comment: commentStr,
           },
           update: {
             amount: amt,
+            comment: commentStr,
           },
         });
       }

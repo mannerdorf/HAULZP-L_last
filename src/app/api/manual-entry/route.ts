@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       categoryId: e.categoryId,
       categoryName: e.category.name,
       amount: e.amount,
+      comment: e.comment ?? null,
     })),
   });
 }
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
     for (const e of expenses || []) {
       if (!e.categoryId) continue;
       const amount = parseFloat(e.amount) || 0;
+      const comment = e.comment != null && typeof e.comment === 'string' ? e.comment.trim() || null : null;
       if (amount === 0) {
         await tx.manualExpense.deleteMany({
           where: { period: periodDate, categoryId: e.categoryId },
@@ -81,8 +83,8 @@ export async function POST(req: NextRequest) {
           where: {
             period_categoryId: { period: periodDate, categoryId: e.categoryId },
           },
-          create: { period: periodDate, categoryId: e.categoryId, amount },
-          update: { amount },
+          create: { period: periodDate, categoryId: e.categoryId, amount, comment },
+          update: { amount, comment },
         });
       }
     }

@@ -33,6 +33,7 @@ interface SavedExpense {
   categoryId: string;
   categoryName: string;
   amount: number;
+  comment?: string | null;
 }
 
 type Props = {
@@ -64,6 +65,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
   const [savedLoading, setSavedLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<{ categoryId: string; value: string } | null>(null);
+  const [editingComment, setEditingComment] = useState<{ categoryId: string; value: string } | null>(null);
   const [catsLoading, setCatsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -93,7 +95,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
       .finally(() => setSavedLoading(false));
   };
 
-  const handleUpdateSavedAmount = async (categoryId: string, newAmount: number) => {
+  const handleUpdateSavedAmount = async (categoryId: string, newAmount: number, comment?: string | null) => {
     setEditingAmount(null);
     const period = `${year}-${String(month).padStart(2, '0')}-01`;
     try {
@@ -103,7 +105,27 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
         body: JSON.stringify({
           period,
           revenues: [],
-          expenses: [{ categoryId, amount: newAmount }],
+          expenses: [{ categoryId, amount: newAmount, comment: comment ?? undefined }],
+        }),
+      });
+      if (!res.ok) throw new Error('Ошибка сохранения');
+      await loadSavedExpenses();
+    } catch {
+      await loadSavedExpenses();
+    }
+  };
+
+  const handleUpdateSavedComment = async (categoryId: string, newComment: string, currentAmount: number) => {
+    setEditingComment(null);
+    const period = `${year}-${String(month).padStart(2, '0')}-01`;
+    try {
+      const res = await fetch('/api/manual-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          period,
+          revenues: [],
+          expenses: [{ categoryId, amount: currentAmount, comment: newComment.trim() || undefined }],
         }),
       });
       if (!res.ok) throw new Error('Ошибка сохранения');
@@ -318,13 +340,16 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Статья</th>
                   <th className="px-6 py-2 text-right text-sm font-medium text-slate-600">Сумма</th>
+                  <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Комментарий</th>
                   <th className="px-6 py-2 w-10" aria-label="Удалить" />
                 </tr>
               </thead>
               <tbody>
                 {savedExpenses.map((e) => {
-                  const isEditing = editingAmount?.categoryId === e.categoryId;
-                  const displayValue = isEditing ? editingAmount.value : String(e.amount);
+                  const isEditingAmount = editingAmount?.categoryId === e.categoryId;
+                  const amountDisplayValue = isEditingAmount ? editingAmount.value : String(e.amount);
+                  const isEditingComment = editingComment?.categoryId === e.categoryId;
+                  const commentDisplayValue = isEditingComment ? editingComment.value : (e.comment ?? '');
                   return (
                   <tr key={e.categoryId} className="border-b border-slate-50 hover:bg-slate-50/50">
                     <td className="px-6 py-2 text-slate-900">{e.categoryName}</td>
@@ -333,19 +358,37 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                         type="number"
                         step="0.01"
                         min="0"
-                        value={displayValue}
+                        value={amountDisplayValue}
                         onChange={(ev) => setEditingAmount({ categoryId: e.categoryId, value: ev.target.value })}
                         onFocus={() => setEditingAmount({ categoryId: e.categoryId, value: String(e.amount) })}
                         onBlur={(ev) => {
                           const raw = ev.target.value.replace(/\s/g, '').replace(/,/g, '.');
                           const v = parseFloat(raw);
                           if (Number.isFinite(v) && v >= 0 && Math.abs(v - e.amount) > 0.001) {
-                            handleUpdateSavedAmount(e.categoryId, v);
+                            handleUpdateSavedAmount(e.categoryId, v, e.comment);
                           } else {
                             setEditingAmount(null);
                           }
                         }}
                         className="w-28 text-right border border-slate-200 rounded px-2 py-1 text-slate-900 font-medium focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      />
+                    </td>
+                    <td className="px-6 py-2">
+                      <input
+                        type="text"
+                        value={commentDisplayValue}
+                        onChange={(ev) => setEditingComment({ categoryId: e.categoryId, value: ev.target.value })}
+                        onFocus={() => setEditingComment({ categoryId: e.categoryId, value: e.comment ?? '' })}
+                        onBlur={(ev) => {
+                          const v = ev.target.value.trim();
+                          if (v !== (e.comment ?? '')) {
+                            handleUpdateSavedComment(e.categoryId, ev.target.value, e.amount);
+                          } else {
+                            setEditingComment(null);
+                          }
+                        }}
+                        placeholder="—"
+                        className="w-full min-w-[120px] max-w-[200px] border border-slate-200 rounded px-2 py-1 text-sm text-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                       />
                     </td>
                     <td className="px-6 py-2">
