@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS "IncomeCategory" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "direction" TEXT NOT NULL,
+    "transportType" TEXT NOT NULL DEFAULT '',
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

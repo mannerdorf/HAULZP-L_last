@@ -12,6 +12,7 @@ export async function PATCH(
     data: {
       ...(body.name != null && { name: body.name }),
       ...(body.direction != null && { direction: body.direction }),
+      ...(body.transportType != null && { transportType: body.transportType }),
       ...(body.sortOrder != null && { sortOrder: body.sortOrder }),
     },
   });

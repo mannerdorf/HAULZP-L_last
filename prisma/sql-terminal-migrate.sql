@@ -3,6 +3,14 @@
 -- Удаление начального сальдо (переход на чистый БДР без ДДС)
 DROP TABLE IF EXISTS "OpeningBalance";
 
+-- IncomeCategory: тип перевозки
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'IncomeCategory' AND column_name = 'transportType') THEN
+    ALTER TABLE "IncomeCategory" ADD COLUMN "transportType" TEXT NOT NULL DEFAULT '';
+  END IF;
+END $$;
+
 -- ManualExpense: комментарий
 DO $$
 BEGIN

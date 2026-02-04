@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name,
       direction: body.direction || 'MSK_TO_KGD',
+      transportType: body.transportType ?? '',
       sortOrder: body.sortOrder ?? 0,
     },
   });

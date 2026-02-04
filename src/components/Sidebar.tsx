@@ -29,7 +29,10 @@ const navMain = [
   { href: '/alerts', label: 'Алерты', icon: Bell },
 ];
 
-const navIncome = [{ href: '/upload/sales', label: 'Доходы', icon: DollarSign }];
+const navIncome = [
+  { href: '/references/income', label: 'Справочник доходов', icon: BookOpen },
+  { href: '/upload/sales', label: 'Доходы', icon: DollarSign },
+];
 
 const navExpensesRef = [
   { href: '/references/expenses', label: 'Справочник расходов', icon: BookOpen },

@@ -62,12 +62,13 @@ model CreditPayment {
 
 // Справочник доходов
 model IncomeCategory {
-  id         String   @id @default(cuid())
-  name       String
-  direction  String   // MSK_TO_KGD | KGD_TO_MSK
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  revenues   ManualRevenue[]
+  id            String   @id @default(cuid())
+  name          String
+  direction     String   // MSK_TO_KGD | KGD_TO_MSK
+  transportType String   @default("") // "" | AUTO | FERRY
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  revenues      ManualRevenue[]
 }
 
 // Справочник подразделений (для выбора на странице расходов)
