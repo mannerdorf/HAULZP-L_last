@@ -1,12 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const FALLBACK_ROWS = [
-  { direction: 'MSK_TO_KGD' as const, transportType: 'AUTO' as const },
-  { direction: 'MSK_TO_KGD' as const, transportType: 'FERRY' as const },
-  { direction: 'KGD_TO_MSK' as const, transportType: 'FERRY' as const },
-];
-
 async function getRowsFromIncomeCategories() {
   const cats = await prisma.incomeCategory.findMany({
     where: {
@@ -30,7 +24,7 @@ async function getRowsFromIncomeCategories() {
     if (a.direction !== b.direction) return a.direction.localeCompare(b.direction);
     return (a.transportType === 'AUTO' ? 0 : 1) - (b.transportType === 'AUTO' ? 0 : 1);
   });
-  return rows.length > 0 ? rows : FALLBACK_ROWS;
+  return rows;
 }
 
 type ManualSaleRow = {

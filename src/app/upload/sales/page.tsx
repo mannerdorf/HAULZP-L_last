@@ -146,6 +146,12 @@ export default function UploadSalesPage() {
 
         {loading ? (
           <div className="animate-pulse text-slate-500">Загрузка...</div>
+        ) : rows.length === 0 ? (
+          <div className="py-8 text-center text-slate-500">
+            Добавьте категории с направлением и типом перевозки в{' '}
+            <a href="/references/income" className="text-primary-600 underline">Справочнике доходов</a>,
+            чтобы появились строки для ввода.
+          </div>
         ) : (
           <div className="space-y-6">
             {rows.map((row, index) => (
