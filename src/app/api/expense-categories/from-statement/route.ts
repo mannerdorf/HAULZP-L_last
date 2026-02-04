@@ -55,11 +55,15 @@ export async function POST(req: NextRequest) {
       const amt = Number(amount) || 0;
       if (shouldSave && amt !== 0) {
         const commentStr = comment && typeof comment === 'string' ? comment.trim() || null : null;
+        const direction = '';
+        const transportType = '';
         await prisma.manualExpense.upsert({
           where: {
-            period_categoryId: {
+            period_categoryId_direction_transportType: {
               period,
               categoryId: category.id,
+              direction,
+              transportType,
             },
           },
           create: {
@@ -67,6 +71,8 @@ export async function POST(req: NextRequest) {
             categoryId: category.id,
             amount: amt,
             comment: commentStr,
+            direction,
+            transportType,
           },
           update: {
             amount: amt,
