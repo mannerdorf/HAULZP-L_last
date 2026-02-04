@@ -10,8 +10,6 @@ import {
   TrendingUp,
   BarChart3,
   Bell,
-  CreditCard,
-  Wallet,
   BookOpen,
   FileUp,
   Truck,
@@ -35,14 +33,12 @@ const navIncome = [{ href: '/upload/sales', label: 'Доходы', icon: DollarS
 
 const navExpensesRef = [
   { href: '/references/expenses', label: 'Справочник расходов', icon: BookOpen },
-  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2 },
   { href: '/upload/statement', label: 'Загрузка выписки', icon: FileUp },
   { href: '/upload/expenses', label: 'Расходы', icon: Truck },
 ];
 
 const navOther = [
-  { href: '/credits', label: 'Кредиты', icon: CreditCard },
-  { href: '/opening-balance', label: 'Начальное сальдо', icon: Wallet },
+  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2 },
   { href: '/settings', label: 'Настройки', icon: SlidersHorizontal },
 ];
 
@@ -60,7 +56,6 @@ export function Sidebar() {
     <aside className="w-64 bg-slate-900 text-white flex flex-col">
       <div className="p-6 border-b border-slate-700">
         <h1 className="font-bold text-lg">P&L + Unit Economics</h1>
-        <p className="text-xs text-slate-400 mt-1">МСК ↔ КГД</p>
       </div>
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navMain.map((item) => {
@@ -126,6 +121,9 @@ export function Sidebar() {
         })}
 
         <div className="my-3 border-t border-slate-700" aria-hidden />
+        <div className="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-slate-500">
+          Прочее
+        </div>
         {navOther.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href);

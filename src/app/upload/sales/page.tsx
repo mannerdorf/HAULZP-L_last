@@ -23,7 +23,7 @@ interface RowState {
 const ROWS: { direction: Direction; transportType: TransportType; label: string }[] = [
   { direction: 'MSK_TO_KGD', transportType: 'AUTO', label: 'Мск–КГД авто' },
   { direction: 'MSK_TO_KGD', transportType: 'FERRY', label: 'Мск–КГД паром' },
-  { direction: 'KGD_TO_MSK', transportType: 'AUTO', label: 'КГД–Мск авто' },
+  { direction: 'KGD_TO_MSK', transportType: 'FERRY', label: 'КГД–МСК Паром' },
 ];
 
 function parseNum(s: string): number {

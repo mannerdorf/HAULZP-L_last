@@ -21,7 +21,6 @@ export default function PLPage() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<{
     pnl: {
-      openingBalance?: number;
       revenue: number;
       cogs: number;
       grossProfit: number;
@@ -65,22 +64,11 @@ export default function PLPage() {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="divide-y divide-slate-100">
           <section className="p-6">
-            <h2 className="font-semibold text-slate-800 mb-4">0. Начальное сальдо</h2>
-            <div className="pl-4">
-              <span className={(pnl.openingBalance ?? 0) >= 0 ? 'text-slate-900' : 'text-red-600'}>
-                {formatRub(pnl.openingBalance ?? 0)}
-              </span>
-              <p className="text-sm text-slate-500 mt-1">
-                Задайте в <a href="/opening-balance" className="text-primary-600 underline">Начальное сальдо</a>
-              </p>
-            </div>
-          </section>
-          <section className="p-6">
             <h2 className="font-semibold text-slate-800 mb-4">1. Выручка</h2>
             <div className="space-y-2 pl-4">
               {revenueByDir.map((r) => (
                 <div key={r.direction} className="flex justify-between">
-                  <span>{DIRECTION_LABELS[r.direction as keyof typeof DIRECTION_LABELS] ?? r.direction}</span>
+                  <span>{(r as { label?: string }).label ?? DIRECTION_LABELS[r.direction as keyof typeof DIRECTION_LABELS] ?? r.direction}</span>
                   <span>{formatRub(r.amount)}</span>
                 </div>
               ))}

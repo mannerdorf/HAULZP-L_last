@@ -171,7 +171,7 @@ export default function DashboardPage() {
                   <BarChart
                     data={
                       charts.revenueByDir?.map((x) => ({
-                        name: x.direction === 'MSK_TO_KGD' ? 'МСК → КГД' : 'КГД → МСК',
+                        name: (x as { label?: string }).label ?? (x.direction === 'MSK_TO_KGD' ? 'МСК → КГД' : x.direction === 'KGD_TO_MSK' ? 'КГД → МСК' : x.direction),
                         value: x.amount,
                       })) ?? []
                     }

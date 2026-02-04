@@ -10,6 +10,12 @@ const DIRECTIONS: { value: string; label: string }[] = [
   ...Object.entries(DIRECTION_LABELS).map(([k, v]) => ({ value: k, label: v })),
 ];
 
+const TRANSPORT_TYPES: { value: string; label: string }[] = [
+  { value: 'all', label: 'Все' },
+  { value: 'AUTO', label: 'Авто' },
+  { value: 'FERRY', label: 'Паром' },
+];
+
 export function Filters() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,6 +23,7 @@ export function Filters() {
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
   const direction = searchParams.get('direction') ?? 'all';
+  const transportType = searchParams.get('transportType') ?? 'all';
 
   const update = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -62,6 +69,20 @@ export function Filters() {
           {DIRECTIONS.map((d) => (
             <option key={d.value} value={d.value}>
               {d.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs text-slate-500 mb-1">Тип перевозки</label>
+        <select
+          value={transportType}
+          onChange={(e) => update('transportType', e.target.value)}
+          className="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900"
+        >
+          {TRANSPORT_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
             </option>
           ))}
         </select>

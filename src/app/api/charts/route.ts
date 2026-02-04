@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     from: searchParams.get('from') || undefined,
     to: searchParams.get('to') || undefined,
     direction: (searchParams.get('direction') || undefined) as any,
+    transportType: searchParams.get('transportType') || undefined,
   };
 
   const [revenueLine, cogsLine, ebitdaLine, netAfterCapexLine, cogsByStage, opexByDept, ebitdaByDir] =

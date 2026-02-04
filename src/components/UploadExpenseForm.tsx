@@ -424,6 +424,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
@@ -433,7 +434,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                   )}
                   <th className="px-6 py-2 text-right text-sm font-medium text-slate-600">Сумма</th>
                   <th className="px-6 py-2 text-left text-sm font-medium text-slate-600">Комментарий</th>
-                  <th className="px-6 py-2 w-10" aria-label="Удалить" />
+                  <th className="px-6 py-2 w-12 shrink-0" aria-label="Удалить" />
                 </tr>
               </thead>
               <tbody>
@@ -491,12 +492,12 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                         className="w-full min-w-[140px] max-w-[220px] border border-slate-200 rounded px-2 py-1 text-sm text-slate-700 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                       />
                     </td>
-                    <td className="px-6 py-2">
+                    <td className="px-6 py-2 w-12 shrink-0 text-right">
                       <button
                         type="button"
                         onClick={() => handleDeleteSaved(e.categoryId, dir, transport)}
                         disabled={deletingId === key}
-                        className="p-1.5 text-slate-400 hover:text-red-600 disabled:opacity-50"
+                        className="p-1.5 text-slate-400 hover:text-red-600 disabled:opacity-50 inline-flex"
                         title="Удалить"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -507,6 +508,7 @@ export function UploadExpenseForm({ department, logisticsStage, label, descripti
                 })}
               </tbody>
             </table>
+            </div>
             <div className="px-6 py-2 bg-slate-50 border-t border-slate-100 flex justify-end">
               <span className="font-semibold text-slate-900">
                 Итого: {formatRub(savedExpenses.reduce((s, e) => s + e.amount, 0))}

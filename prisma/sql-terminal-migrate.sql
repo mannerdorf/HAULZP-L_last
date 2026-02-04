@@ -1,5 +1,8 @@
 -- Выполните в SQL Editor Neon или в psql. Идемпотентно — можно запускать повторно.
 
+-- Удаление начального сальдо (переход на чистый БДР без ДДС)
+DROP TABLE IF EXISTS "OpeningBalance";
+
 -- ManualExpense: комментарий
 DO $$
 BEGIN

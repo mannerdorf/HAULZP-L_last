@@ -8,7 +8,6 @@ export interface DateRange {
 }
 
 export interface PnLData {
-  openingBalance: number;
   revenue: number;
   cogs: number;
   grossProfit: number;
@@ -40,19 +39,26 @@ export interface FilterParams {
   from?: string;
   to?: string;
   direction?: Direction;
+  transportType?: string; // '' | 'AUTO' | 'FERRY'
 }
 
-function parseFilter(params: FilterParams): { dateFrom?: Date; dateTo?: Date; direction?: Direction } {
+function parseFilter(params: FilterParams): {
+  dateFrom?: Date;
+  dateTo?: Date;
+  direction?: Direction;
+  transportType?: string;
+} {
   return {
     dateFrom: params.from ? new Date(params.from) : undefined,
     dateTo: params.to ? new Date(params.to) : undefined,
     direction: params.direction,
+    transportType: params.transportType && params.transportType !== 'all' ? params.transportType : undefined,
   };
 }
 
 async function getOperationsSum(
   type: string,
-  filters: { dateFrom?: Date; dateTo?: Date; direction?: Direction }
+  filters: { dateFrom?: Date; dateTo?: Date; direction?: Direction; transportType?: string }
 ): Promise<number> {
   const ops = await prisma.operation.findMany({
     where: {
@@ -67,11 +73,6 @@ async function getOperationsSum(
 
 export async function getPnL(params: FilterParams): Promise<PnLData> {
   const f = parseFilter(params);
-
-  const periodForOpening = f.dateFrom ? startOfMonth(f.dateFrom) : undefined;
-  const openingRec = periodForOpening
-    ? await prisma.openingBalance.findUnique({ where: { period: periodForOpening } }).then((r) => r?.amount ?? 0)
-    : 0;
 
   const [revenueOps, cogsOps, opexOps, capexOps, belowEbitdaOps, creditPayments, manualRevenue, manualCogs, manualOpex, manualCapex] = await Promise.all([
     getOperationsSum('REVENUE', f),
@@ -96,13 +97,16 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
       where: {
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
-        ...(f.direction && { category: { direction: f.direction } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
       },
     }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
     prisma.manualExpense.findMany({
       where: {
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
         category: { type: 'COGS' },
       },
     }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
@@ -110,6 +114,8 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
       where: {
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
         category: { type: 'OPEX' },
       },
     }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
@@ -117,6 +123,8 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
       where: {
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
         category: { type: 'CAPEX' },
       },
     }).then((r) => r.reduce((s, x) => s + x.amount, 0)),
@@ -134,7 +142,6 @@ export async function getPnL(params: FilterParams): Promise<PnLData> {
   const netAfterCapex = ebitda - capex;
 
   return {
-    openingBalance: openingRec,
     revenue,
     cogs,
     grossProfit,
@@ -165,6 +172,8 @@ export async function getCogsByStage(params: FilterParams): Promise<CogsByStage[
         category: { type: 'COGS', logisticsStage: { not: null } },
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
       },
       include: { category: true },
     }),
@@ -199,6 +208,8 @@ export async function getOpexByDepartment(params: FilterParams): Promise<{ dept:
         category: { type: 'OPEX' },
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
       },
       include: { category: true },
     }),
@@ -214,36 +225,71 @@ export async function getOpexByDepartment(params: FilterParams): Promise<{ dept:
   return Object.entries(byDept).map(([dept, amount]) => ({ dept, amount }));
 }
 
-export async function getRevenueByDirection(params: FilterParams): Promise<{ direction: string; amount: number }[]> {
+const DIR_TRANSPORT_LABELS: Record<string, string> = {
+  MSK_TO_KGD: 'МСК→КГД',
+  KGD_TO_MSK: 'КГД→МСК',
+};
+
+export async function getRevenueByDirection(params: FilterParams): Promise<{ direction: string; amount: number; label?: string }[]> {
   const f = parseFilter(params);
-  const [ops, manual] = await Promise.all([
+  const [ops, manual, sales] = await Promise.all([
     prisma.operation.findMany({
       where: {
         operationType: 'REVENUE',
         direction: { not: null },
         ...(f.dateFrom && { date: { gte: f.dateFrom } }),
         ...(f.dateTo && { date: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
       },
     }),
     prisma.manualRevenue.findMany({
       where: {
         ...(f.dateFrom && { period: { gte: f.dateFrom } }),
         ...(f.dateTo && { period: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
       },
       include: { category: true },
     }),
+    prisma.sale.findMany({
+      where: {
+        ...(f.dateFrom && { date: { gte: f.dateFrom } }),
+        ...(f.dateTo && { date: { lte: f.dateTo } }),
+        ...(f.direction && { direction: f.direction }),
+        ...(f.transportType && { transportType: f.transportType }),
+      },
+    }),
   ]);
 
-  const byDir: Record<string, number> = {};
-  for (const op of ops) {
-    if (op.direction) {
-      byDir[op.direction] = (byDir[op.direction] || 0) + Math.abs(op.amount);
+  const key = (dir: string, transport?: string | null) =>
+    transport && transport !== '' ? `${dir}:${transport}` : dir;
+
+  const byKey: Record<string, number> = {};
+  if (!f.transportType) {
+    for (const op of ops) {
+      if (op.direction) {
+        byKey[op.direction] = (byKey[op.direction] || 0) + Math.abs(op.amount);
+      }
     }
   }
   for (const m of manual) {
-    byDir[m.category.direction] = (byDir[m.category.direction] || 0) + m.amount;
+    const dir = m.direction || m.category.direction;
+    const transport = m.transportType || '';
+    const k = key(dir, transport || undefined);
+    byKey[k] = (byKey[k] || 0) + m.amount;
   }
-  return Object.entries(byDir).map(([dir, amount]) => ({ direction: dir, amount }));
+  for (const s of sales) {
+    const k = key(s.direction, s.transportType || undefined);
+    byKey[k] = (byKey[k] || 0) + s.revenue;
+  }
+
+  return Object.entries(byKey).map(([k, amount]) => {
+    const [dir, transport] = k.includes(':') ? k.split(':') : [k, ''];
+    const label = transport
+      ? `${DIR_TRANSPORT_LABELS[dir] ?? dir} ${transport === 'FERRY' ? 'паром' : 'авто'}`
+      : (DIR_TRANSPORT_LABELS[dir] ?? dir);
+    return { direction: k, amount, label };
+  });
 }
 
 export async function getEbitdaByDirection(params: FilterParams): Promise<{ direction: string; amount: number }[]> {
@@ -271,6 +317,7 @@ export async function getTotalWeightKg(params: FilterParams): Promise<number> {
       ...(f.dateFrom && { date: { gte: f.dateFrom } }),
       ...(f.dateTo && { date: { lte: f.dateTo } }),
       ...(f.direction && { direction: f.direction }),
+      ...(f.transportType && { transportType: f.transportType }),
     },
   });
   return sales.reduce((s, sale) => s + sale.weightKg, 0);
@@ -323,6 +370,7 @@ export async function getMonthlySeries(
 
   const months: { month: string; value: number }[] = [];
   let cur = startOfMonth(from);
+  const transportType = params.transportType;
 
   while (cur <= to) {
     const next = endOfMonth(cur);
@@ -330,6 +378,7 @@ export async function getMonthlySeries(
       from: cur.toISOString(),
       to: next.toISOString(),
       ...(direction && { direction }),
+      ...(transportType && transportType !== 'all' && { transportType }),
     };
     const pnl = await getPnL(f);
     let val = 0;
@@ -352,6 +401,7 @@ export async function getMonthlyMarginPerKg(
 
   const months: { month: string; marginPerKg: number }[] = [];
   let cur = startOfMonth(from);
+  const transportType = params.transportType;
 
   while (cur <= to) {
     const next = endOfMonth(cur);
@@ -359,6 +409,7 @@ export async function getMonthlyMarginPerKg(
       from: cur.toISOString(),
       to: next.toISOString(),
       ...(direction && { direction }),
+      ...(transportType && transportType !== 'all' && { transportType }),
     };
     const ue = await getUnitEconomics(f);
     months.push({
