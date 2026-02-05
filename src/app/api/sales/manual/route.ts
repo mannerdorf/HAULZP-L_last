@@ -7,9 +7,10 @@ async function getRowsFromIncomeCategories() {
       direction: { in: ['MSK_TO_KGD', 'KGD_TO_MSK'] },
       transportType: { in: ['AUTO', 'FERRY'] },
     },
+    orderBy: [{ direction: 'asc' }, { transportType: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
   });
   const seen = new Set<string>();
-  const rows: { direction: 'MSK_TO_KGD' | 'KGD_TO_MSK'; transportType: 'AUTO' | 'FERRY' }[] = [];
+  const rows: { direction: 'MSK_TO_KGD' | 'KGD_TO_MSK'; transportType: 'AUTO' | 'FERRY'; categoryId: string; name: string }[] = [];
   for (const c of cats) {
     const key = `${c.direction}:${c.transportType}`;
     if (!seen.has(key)) {
@@ -17,13 +18,11 @@ async function getRowsFromIncomeCategories() {
       rows.push({
         direction: c.direction as 'MSK_TO_KGD' | 'KGD_TO_MSK',
         transportType: c.transportType as 'AUTO' | 'FERRY',
+        categoryId: c.id,
+        name: c.name,
       });
     }
   }
-  rows.sort((a, b) => {
-    if (a.direction !== b.direction) return a.direction.localeCompare(b.direction);
-    return (a.transportType === 'AUTO' ? 0 : 1) - (b.transportType === 'AUTO' ? 0 : 1);
-  });
   return rows;
 }
 
@@ -70,9 +69,11 @@ export async function GET(req: NextRequest) {
   });
 
   return Response.json({
-    rows: rows.map(({ direction, transportType }) => ({
+    rows: rows.map(({ direction, transportType, categoryId, name }) => ({
       direction,
       transportType,
+      categoryId,
+      name,
       ...byKey[`${direction}:${transportType}`],
     })),
   });

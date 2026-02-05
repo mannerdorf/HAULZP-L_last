@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Save, CheckCircle } from 'lucide-react';
-import { DIRECTION_LABELS } from '@/lib/constants';
-
 const MONTHS = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
@@ -15,16 +13,12 @@ type TransportType = 'AUTO' | 'FERRY';
 interface RowState {
   direction: Direction;
   transportType: TransportType;
+  categoryId?: string;
+  name: string;
   weightKg: string;
   volume: string;
   paidWeightKg: string;
   revenue: string;
-}
-
-function rowLabel(direction: string, transportType: string): string {
-  const dir = (DIRECTION_LABELS as Record<string, string>)[direction] ?? direction;
-  const transport = transportType === 'FERRY' ? 'паром' : 'авто';
-  return `${dir} ${transport}`;
 }
 
 function parseNum(s: string): number {
@@ -56,9 +50,14 @@ export default function UploadSalesPage() {
       .then((data) => {
         if (data.rows && Array.isArray(data.rows)) {
           setRows(
-            data.rows.map((x: { direction: string; transportType: string; weightKg?: number; volume?: number; paidWeightKg?: number; revenue?: number }) => ({
+            data.rows.map((x: {
+              direction: string; transportType: string; name?: string; categoryId?: string;
+              weightKg?: number; volume?: number; paidWeightKg?: number; revenue?: number;
+            }) => ({
               direction: (x.direction || 'MSK_TO_KGD') as Direction,
               transportType: (x.transportType || 'AUTO') as TransportType,
+              categoryId: x.categoryId,
+              name: x.name || '',
               weightKg: x.weightKg != null ? String(x.weightKg) : '',
               volume: x.volume != null ? String(x.volume) : '',
               paidWeightKg: x.paidWeightKg != null ? String(x.paidWeightKg) : '',
@@ -159,7 +158,7 @@ export default function UploadSalesPage() {
                 key={`${row.direction}-${row.transportType}`}
                 className="p-4 rounded-xl border border-slate-200 bg-slate-50/50"
               >
-                <h3 className="font-medium text-slate-800 mb-3">{rowLabel(row.direction, row.transportType)}</h3>
+                <h3 className="font-medium text-slate-800 mb-3">{row.name}</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Вес, кг</label>
