@@ -19,6 +19,7 @@ import {
   Building2,
   SlidersHorizontal,
   LogOut,
+  ExternalLink,
 } from 'lucide-react';
 
 const navMain = [
@@ -40,9 +41,15 @@ const navExpensesRef = [
   { href: '/upload/expenses', label: 'Расходы', icon: Truck },
 ];
 
+// Ссылка на приложение Next.js (на Vercel или свой URL)
+const appUrl =
+  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_URL) ||
+  (typeof window !== 'undefined' ? window.location.origin : '');
+
 const navOther = [
-  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2 },
-  { href: '/settings', label: 'Настройки', icon: SlidersHorizontal },
+  ...(appUrl ? [{ href: appUrl, label: 'Приложение (Next.js)', icon: ExternalLink, external: true }] : []),
+  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2, external: false },
+  { href: '/settings', label: 'Настройки', icon: SlidersHorizontal, external: false },
 ];
 
 export function Sidebar() {
@@ -129,16 +136,24 @@ export function Sidebar() {
         </div>
         {navOther.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href);
-          return (
-            <Link
+          const active = !item.external && (pathname === item.href || pathname.startsWith(item.href));
+          const className = clsx(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+            active ? 'bg-primary-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+          );
+          return item.external ? (
+            <a
               key={item.href}
               href={item.href}
-              className={clsx(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                active ? 'bg-primary-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={className}
             >
+              <Icon className="w-5 h-5 shrink-0" />
+              {item.label}
+            </a>
+          ) : (
+            <Link key={item.href} href={item.href} className={className}>
               <Icon className="w-5 h-5 shrink-0" />
               {item.label}
             </Link>
