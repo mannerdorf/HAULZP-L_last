@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import clsx from 'clsx';
 import {
   LayoutDashboard,
@@ -41,20 +42,40 @@ const navExpensesRef = [
   { href: '/upload/expenses', label: 'Расходы', icon: Truck },
 ];
 
-// Ссылка на приложение Next.js (на Vercel или свой URL)
-const appUrl =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_URL) ||
-  (typeof window !== 'undefined' ? window.location.origin : '');
-
-const navOther = [
-  ...(appUrl ? [{ href: appUrl, label: 'Приложение (Next.js)', icon: ExternalLink, external: true }] : []),
-  { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2, external: false },
-  { href: '/settings', label: 'Настройки', icon: SlidersHorizontal, external: false },
-];
+function normalizeUrl(raw?: string): string {
+  const value = (raw || '').trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const appUrl = useMemo(() => {
+    const envUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
+    if (envUrl) return envUrl;
+    if (typeof window !== 'undefined') return window.location.origin;
+    return '';
+  }, []);
+  const sameOriginApp = useMemo(() => {
+    if (!appUrl || typeof window === 'undefined') return false;
+    try {
+      return new URL(appUrl).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }, [appUrl]);
+  const navOther = useMemo(
+    () => [
+      ...(appUrl
+        ? [{ href: appUrl, label: 'Приложение (Next.js)', icon: ExternalLink, external: true }]
+        : []),
+      { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2, external: false },
+      { href: '/settings', label: 'Настройки', icon: SlidersHorizontal, external: false },
+    ],
+    [appUrl]
+  );
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -142,16 +163,23 @@ export function Sidebar() {
             active ? 'bg-primary-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
           );
           return item.external ? (
-            <a
-              key={item.href}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={className}
-            >
-              <Icon className="w-5 h-5 shrink-0" />
-              {item.label}
-            </a>
+            sameOriginApp ? (
+              <Link key={item.href} href="/" className={className}>
+                <Icon className="w-5 h-5 shrink-0" />
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+              >
+                <Icon className="w-5 h-5 shrink-0" />
+                {item.label}
+              </a>
+            )
           ) : (
             <Link key={item.href} href={item.href} className={className}>
               <Icon className="w-5 h-5 shrink-0" />
