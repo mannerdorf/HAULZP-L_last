@@ -54,14 +54,13 @@ export function Sidebar() {
   const router = useRouter();
   const appUrl = useMemo(() => {
     const envUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
-    if (envUrl) return envUrl;
-    if (typeof window !== 'undefined') return window.location.origin;
-    return '';
+    return envUrl || '/login';
   }, []);
-  const sameOriginApp = useMemo(() => {
+  const isExternalApp = useMemo(() => {
     if (!appUrl || typeof window === 'undefined') return false;
+    if (!/^https?:\/\//i.test(appUrl)) return false;
     try {
-      return new URL(appUrl).origin === window.location.origin;
+      return new URL(appUrl).origin !== window.location.origin;
     } catch {
       return false;
     }
@@ -69,12 +68,12 @@ export function Sidebar() {
   const navOther = useMemo(
     () => [
       ...(appUrl
-        ? [{ href: appUrl, label: 'Приложение (Next.js)', icon: ExternalLink, external: true }]
+        ? [{ href: appUrl, label: 'Приложение (Next.js)', icon: ExternalLink, external: isExternalApp }]
         : []),
       { href: '/references/subdivisions', label: 'Справочник подразделений', icon: Building2, external: false },
       { href: '/settings', label: 'Настройки', icon: SlidersHorizontal, external: false },
     ],
-    [appUrl]
+    [appUrl, isExternalApp]
   );
 
   const handleLogout = async () => {
@@ -163,23 +162,16 @@ export function Sidebar() {
             active ? 'bg-primary-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
           );
           return item.external ? (
-            sameOriginApp ? (
-              <Link key={item.href} href="/" className={className}>
-                <Icon className="w-5 h-5 shrink-0" />
-                {item.label}
-              </Link>
-            ) : (
-              <a
-                key={item.href}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={className}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                {item.label}
-              </a>
-            )
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={className}
+            >
+              <Icon className="w-5 h-5 shrink-0" />
+              {item.label}
+            </a>
           ) : (
             <Link key={item.href} href={item.href} className={className}>
               <Icon className="w-5 h-5 shrink-0" />
