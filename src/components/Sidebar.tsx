@@ -54,16 +54,13 @@ export function Sidebar() {
   const router = useRouter();
   const appUrl = useMemo(() => {
     const envUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
-    return envUrl || '/login';
+    if (envUrl) return envUrl;
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/?from=nextjs-link`;
   }, []);
   const isExternalApp = useMemo(() => {
-    if (!appUrl || typeof window === 'undefined') return false;
-    if (!/^https?:\/\//i.test(appUrl)) return false;
-    try {
-      return new URL(appUrl).origin !== window.location.origin;
-    } catch {
-      return false;
-    }
+    if (!appUrl) return false;
+    return /^https?:\/\//i.test(appUrl);
   }, [appUrl]);
   const navOther = useMemo(
     () => [
